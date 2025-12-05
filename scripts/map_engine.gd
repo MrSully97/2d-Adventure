@@ -16,8 +16,6 @@ extends TileMap
 @export var tileset_source_id: int = 0                     # Source ID in your tileset
 @export var floor_atlas: Vector2i = Vector2i(1, 1)         # Atlas coords for floor tile
 @export var bg_atlas: Vector2i = Vector2i(2, 2)            # Background tile
-@export var ladder_min: Vector2i = Vector2i(5, 9)
-@export var ladder_max: Vector2i = Vector2i(5, 11)
 # Spawn settings
 @export var player_path: NodePath
 
@@ -55,10 +53,6 @@ func get_random_bg_tile() -> Vector2i:
 	var y = randi_range(bg_min.y, bg_max.y)
 	return Vector2i(x, y)
 
-func get_random_ladder_tile() -> Vector2i:
-	var x = randi_range(ladder_min.x, ladder_max.x)
-	var y = randi_range(ladder_min.y, ladder_max.y)
-	return Vector2i(x, y)
 
 # ------------------------------------
 # MAIN DUNGEON GENERATION
