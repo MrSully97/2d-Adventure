@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3 uid="uid://71njd8omm6kw"]
 
 [ext_resource type="PackedScene" uid="uid://cny27g58i2o5r" path="res://scenes/player.tscn" id="1_uwrxv"]
-[ext_resource type="Script" uid="uid://bpwlmkxmb5qiu" path="res://scripts/map_creation.gd" id="2_lnu2h"]
+[ext_resource type="Script" uid="uid://bpwlmkxmb5qiu" path="res://scripts/map_engine.gd" id="2_lnu2h"]
 [ext_resource type="Texture2D" uid="uid://coq8tfs6jynsl" path="res://assets/sprites/Dungeon Tile Set.png" id="2_yqjtg"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_lnu2h"]

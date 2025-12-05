@@ -23,7 +23,13 @@ extends TileMap
 
 # Internal
 var platform_list: Array[Dictionary] = []
-
+var pieces: Array[StagePiece] = [
+	FlatGroundPiece.new(),
+	HillPiece.new(),
+	GapPiece.new(),
+	FloatingPlatformPiece.new(),
+	StairsPiece.new()
+]
 
 func _ready():
 	randomize()
@@ -84,53 +90,58 @@ func generate_stage():
 	
 	var first_platform_x = -1  # reset at start
 	
+	#while x < map_width:
+		#var section_type = randi() % 5
+#
+		## Example for flat ground section
+		#match section_type:
+			#0:
+				#var length = randi_range(5, 12)
+				#for i in range(length):
+					#place_ground_column(x + i, y_ground)
+					#if first_platform_x == -1:
+						#first_platform_x = x + i  # record first ground
+				#x += length
+#
+			#1:  # Small hill up/down
+				#var height = randi_range(1, 4)
+				#var width = randi_range(4, 8)
+				#for i in range(width):
+					#var h = int((height * i) / width)
+					#place_ground_column(x + i, y_ground - h)
+				#x += width
+#
+			#2:  # Gap
+				#var gap_size = randi_range(2, 5)
+				#x += gap_size  # skip tiles
+#
+			#3:  # Floating platform
+				#var platform_len = randi_range(2, 6)
+				#var platform_y = y_ground - randi_range(3, 6)
+#
+				## Spawn platform tiles
+				#for i in range(platform_len):
+					#set_cell(0, Vector2i(x + i, platform_y), tileset_source_id, floor_atlas, 0)
+#
+				## 30% chance a ladder is created from this platform down to ground
+				#if randi() % 3 == 0:
+					#var ladder_x = x + randi_range(0, platform_len - 1)
+					#for ly in range(platform_y + 1, y_ground):
+						#set_cell(0, Vector2i(ladder_x, ly), tileset_source_id, get_random_ladder_tile(), 0)
+#
+				#x += platform_len
+#
+			#4:  # Stairs
+				#var height = randi_range(3, 6)
+				#for h in range(height):
+					#place_ground_column(x + h, y_ground - h)
+				#x += height
+	
 	while x < map_width:
-		var section_type = randi() % 5
-
-		# Example for flat ground section
-		match section_type:
-			0:
-				var length = randi_range(5, 12)
-				for i in range(length):
-					place_ground_column(x + i, y_ground)
-					if first_platform_x == -1:
-						first_platform_x = x + i  # record first ground
-				x += length
-
-			1:  # Small hill up/down
-				var height = randi_range(1, 4)
-				var width = randi_range(4, 8)
-				for i in range(width):
-					var h = int((height * i) / width)
-					place_ground_column(x + i, y_ground - h)
-				x += width
-
-			2:  # Gap
-				var gap_size = randi_range(2, 5)
-				x += gap_size  # skip tiles
-
-			3:  # Floating platform
-				var platform_len = randi_range(2, 6)
-				var platform_y = y_ground - randi_range(3, 6)
-
-				# Spawn platform tiles
-				for i in range(platform_len):
-					set_cell(0, Vector2i(x + i, platform_y), tileset_source_id, floor_atlas, 0)
-
-				# 30% chance a ladder is created from this platform down to ground
-				if randi() % 3 == 0:
-					var ladder_x = x + randi_range(0, platform_len - 1)
-					for ly in range(platform_y + 1, y_ground):
-						set_cell(0, Vector2i(ladder_x, ly), tileset_source_id, get_random_ladder_tile(), 0)
-
-				x += platform_len
-
-			4:  # Stairs
-				var height = randi_range(3, 6)
-				for h in range(height):
-					place_ground_column(x + h, y_ground - h)
-				x += height
-
+		var piece: StagePiece = pieces.pick_random()
+		var consumed = piece.generate(self, x, y_ground)
+		x += consumed
+	
 	print("Mario-style world generated!")
 
 # ------------------------------------
