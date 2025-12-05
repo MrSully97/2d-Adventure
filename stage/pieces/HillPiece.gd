@@ -12,6 +12,6 @@ func generate(tilemap: TileMap, x: int, y_ground: int) -> int:
 
 	for i in range(width):
 		var h = int((height * i) / width)
-		tilemap.place_ground_column(x + i, y_ground - h)
+		tilemap.place_ground_column(x + i, y_ground - h, tilemap.floor_atlas)
 
 	return width

@@ -5,6 +5,8 @@ extends TileMap
 # ------------------------------------
 @export var map_width: int = 500
 @export var map_height: int = 10
+@export var background_layer: int = 0
+@export var mid_layer: int = 1
 
 # Dungeon corridor generation settings
 @export var steps: int = 80
@@ -15,10 +17,12 @@ extends TileMap
 # Tileset info (Godot 4 TileMap)
 @export var tileset_source_id: int = 0                     # Source ID in your tileset
 @export var floor_atlas: Vector2i = Vector2i(1, 1)         # Atlas coords for floor tile
+@export var stair_atlas: Vector2i = Vector2i(5, 1)         # Atlas coords for floor tile
+
 @export var bg_atlas: Vector2i = Vector2i(2, 2)            # Background tile
 # Spawn settings
 @export var player_path: NodePath
-
+var tilemap: TileMap
 # Internal
 var platform_list: Array[Dictionary] = []
 var pieces: Array[StagePiece] = [
@@ -38,14 +42,15 @@ func _ready():
 # ------------------------------------
 # PLACE TILES
 # ------------------------------------
-func place_ground_column(x: int, y_top: int):
+func place_ground_column(x: int, y_top: int, atlas: Vector2i):
+	print(get_layer_name(1))
 	# Place ground normally
 	for y in range(y_top, map_height):
-		set_cell(0, Vector2i(x, y), tileset_source_id, floor_atlas, 0)
+		set_cell(mid_layer, Vector2i(x, y), tileset_source_id, atlas, 0)
 
 	# Fill BELOW the ground with random tiles
 	for y in range(y_top + 1, map_height):
-		set_cell(0, Vector2i(x, y), tileset_source_id, get_random_bg_tile(), 0)
+		set_cell(mid_layer, Vector2i(x, y), tileset_source_id, get_random_bg_tile(), 0)
 		
 		
 func get_random_bg_tile() -> Vector2i:
@@ -73,10 +78,10 @@ func generate_stage():
 	# Draw background first
 	for w in range(map_width + visible_tiles_x):
 		for h in range(map_height + visible_tiles_y):
-			set_cell(0, Vector2i(w, h), tileset_source_id, bg_atlas, 0)
-			set_cell(0, Vector2i(-w, -h), tileset_source_id, bg_atlas, 0)
-			set_cell(0, Vector2i(w, -h), tileset_source_id, bg_atlas, 0)
-			set_cell(0, Vector2i(-w, h), tileset_source_id, bg_atlas, 0)
+			set_cell(background_layer, Vector2i(w, h), tileset_source_id, bg_atlas, 0)
+			set_cell(background_layer, Vector2i(-w, -h), tileset_source_id, bg_atlas, 0)
+			set_cell(background_layer, Vector2i(w, -h), tileset_source_id, bg_atlas, 0)
+			set_cell(background_layer, Vector2i(-w, h), tileset_source_id, bg_atlas, 0)
 
 	var y_ground := map_height - 5         # Where floor baseline is
 	var x := 0
