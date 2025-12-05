@@ -5,6 +5,7 @@ func enter(previous_state_path: String, data := {}) -> void:
 
 func physics_update(_delta: float) -> void:
 	var input_direction_x := Input.get_axis("move_left", "move_right")
+	player.direction = int(player.velocity.x) / player.SPEED
 	if input_direction_x > 0:
 		player.animation_player.flip_h = false
 	elif input_direction_x < 0:
@@ -18,3 +19,5 @@ func physics_update(_delta: float) -> void:
 			finished.emit(IDLE)
 		else:
 			finished.emit(RUNNING)
+	elif not player.is_on_floor() and not player.on_ledge:
+		print('not on ledge: ', player.direction)
