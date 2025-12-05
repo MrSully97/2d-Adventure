@@ -1,6 +1,12 @@
 extends PlayerState
 
+var allow_air_movement = false
+
 func enter(previous_state_path: String, data := {}) -> void:
+	if previous_state_path == "Idle":
+		allow_air_movement = true
+	else:
+		allow_air_movement = false
 	player.velocity.y = player.JUMP_VELOCITY
 	player.animation_player.play("jump")
 
@@ -10,7 +16,9 @@ func physics_update(_delta: float) -> void:
 		player.animation_player.flip_h = false
 	elif input_direction_x < 0:
 		player.animation_player.flip_h = true
-	#player.velocity.x = player.SPEED * input_direction_x
+	# Allows air movement from idle animation to allow better directional jumps from standing
+	if allow_air_movement == true:
+		player.velocity.x = (player.SPEED / 1.5) * input_direction_x
 	player.velocity.y += player.gravity * _delta
 	player.move_and_slide()
 	
