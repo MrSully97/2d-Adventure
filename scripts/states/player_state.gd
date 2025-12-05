@@ -5,6 +5,7 @@ const RUNNING = "Running"
 const JUMPING = "Jumping"
 const FALLING = "Falling"
 const CROUCHING = "Crouching"
+const LEDGE_GRABBING = "Ledge_Grab"
 
 var player: Player
 

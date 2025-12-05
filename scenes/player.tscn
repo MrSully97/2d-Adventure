@@ -1,4 +1,4 @@
-[gd_scene load_steps=69 format=3 uid="uid://cny27g58i2o5r"]
+[gd_scene load_steps=76 format=3 uid="uid://cny27g58i2o5r"]
 
 [ext_resource type="Texture2D" uid="uid://b62od7w55yndu" path="res://assets/sprites/Player Movement v1/player idle.png" id="1_3vyb7"]
 [ext_resource type="Script" uid="uid://2yqphclqplct" path="res://scripts/player.gd" id="1_g2els"]
@@ -6,12 +6,14 @@
 [ext_resource type="Texture2D" uid="uid://dou32dcsomqx4" path="res://assets/sprites/Player Movement v1/player run.png" id="3_qhqgy"]
 [ext_resource type="Texture2D" uid="uid://c7jpqsfpywq0v" path="res://assets/sprites/Player Movement v1/player jump.png" id="3_qlg0r"]
 [ext_resource type="Texture2D" uid="uid://clt5dio0ddjvd" path="res://assets/sprites/Player Movement v1/player land.png" id="4_tuyoq"]
+[ext_resource type="Texture2D" uid="uid://imvqf43ddx1k" path="res://assets/sprites/Player Movement v2/player ledge climb.png" id="6_f1ej7"]
 [ext_resource type="Script" uid="uid://do6ghhuo2p0rb" path="res://scripts/state_machine.gd" id="7_fjrip"]
 [ext_resource type="Script" uid="uid://jyrc6g3srh0i" path="res://scripts/states/idle.gd" id="8_smehm"]
 [ext_resource type="Script" uid="uid://diw4udr27b4rc" path="res://scripts/states/running.gd" id="9_d2wvv"]
 [ext_resource type="Script" uid="uid://c1chun0tfbo6t" path="res://scripts/states/jumping.gd" id="10_3v2ag"]
 [ext_resource type="Script" uid="uid://wq8l5oio7nqs" path="res://scripts/states/falling.gd" id="11_jej6c"]
 [ext_resource type="Script" uid="uid://momsybih5v3m" path="res://scripts/states/crouching.gd" id="12_3v2ag"]
+[ext_resource type="Script" uid="uid://g5mf1bxrdnq" path="res://scripts/states/ledge_grab.gd" id="13_jej6c"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bj30b"]
 atlas = ExtResource("2_tuyoq")
@@ -196,6 +198,26 @@ region = Rect2(336, 0, 48, 48)
 [sub_resource type="AtlasTexture" id="AtlasTexture_md1ol"]
 atlas = ExtResource("4_tuyoq")
 region = Rect2(384, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_74r1k"]
+atlas = ExtResource("6_f1ej7")
+region = Rect2(0, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8svfe"]
+atlas = ExtResource("6_f1ej7")
+region = Rect2(48, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2a3c5"]
+atlas = ExtResource("6_f1ej7")
+region = Rect2(96, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_42b1b"]
+atlas = ExtResource("6_f1ej7")
+region = Rect2(144, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h7ic4"]
+atlas = ExtResource("6_f1ej7")
+region = Rect2(192, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3v2ag"]
 atlas = ExtResource("3_qhqgy")
@@ -396,6 +418,26 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_74r1k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8svfe")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2a3c5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_42b1b")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h7ic4")
+}],
+"loop": false,
+"name": &"ledge_grab",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_3v2ag")
 }, {
 "duration": 1.0,
@@ -434,9 +476,8 @@ script = ExtResource("1_g2els")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -16)
 sprite_frames = SubResource("SpriteFrames_3v2ag")
-animation = &"run"
+animation = &"ledge_grab"
 autoplay = "idle"
-frame_progress = 0.4123081
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -13)
@@ -459,3 +500,26 @@ script = ExtResource("11_jej6c")
 
 [node name="Crouching" type="Node" parent="StateMachine"]
 script = ExtResource("12_3v2ag")
+
+[node name="Ledge_Grab" type="Node" parent="StateMachine"]
+script = ExtResource("13_jej6c")
+
+[node name="ledge_grab_miss" type="RayCast2D" parent="."]
+position = Vector2(0, -33)
+target_position = Vector2(25, 0)
+hit_from_inside = true
+
+[node name="ledge_grab_miss2" type="RayCast2D" parent="."]
+position = Vector2(0, -25)
+target_position = Vector2(-25, 0)
+hit_from_inside = true
+
+[node name="ledge_grab_hit" type="RayCast2D" parent="."]
+position = Vector2(0, -23)
+target_position = Vector2(20, 0)
+hit_from_inside = true
+
+[node name="ledge_grab_hit2" type="RayCast2D" parent="."]
+position = Vector2(0, -18)
+target_position = Vector2(-20, 0)
+hit_from_inside = true
