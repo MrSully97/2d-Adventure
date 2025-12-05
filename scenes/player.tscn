@@ -1,4 +1,4 @@
-[gd_scene load_steps=62 format=3 uid="uid://cny27g58i2o5r"]
+[gd_scene load_steps=69 format=3 uid="uid://cny27g58i2o5r"]
 
 [ext_resource type="Texture2D" uid="uid://b62od7w55yndu" path="res://assets/sprites/Player Movement v1/player idle.png" id="1_3vyb7"]
 [ext_resource type="Script" uid="uid://2yqphclqplct" path="res://scripts/player.gd" id="1_g2els"]
@@ -6,6 +6,12 @@
 [ext_resource type="Texture2D" uid="uid://dou32dcsomqx4" path="res://assets/sprites/Player Movement v1/player run.png" id="3_qhqgy"]
 [ext_resource type="Texture2D" uid="uid://c7jpqsfpywq0v" path="res://assets/sprites/Player Movement v1/player jump.png" id="3_qlg0r"]
 [ext_resource type="Texture2D" uid="uid://clt5dio0ddjvd" path="res://assets/sprites/Player Movement v1/player land.png" id="4_tuyoq"]
+[ext_resource type="Script" uid="uid://do6ghhuo2p0rb" path="res://scripts/state_machine.gd" id="7_fjrip"]
+[ext_resource type="Script" uid="uid://jyrc6g3srh0i" path="res://scripts/states/idle.gd" id="8_smehm"]
+[ext_resource type="Script" uid="uid://diw4udr27b4rc" path="res://scripts/states/running.gd" id="9_d2wvv"]
+[ext_resource type="Script" uid="uid://c1chun0tfbo6t" path="res://scripts/states/jumping.gd" id="10_3v2ag"]
+[ext_resource type="Script" uid="uid://wq8l5oio7nqs" path="res://scripts/states/falling.gd" id="11_jej6c"]
+[ext_resource type="Script" uid="uid://momsybih5v3m" path="res://scripts/states/crouching.gd" id="12_3v2ag"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bj30b"]
 atlas = ExtResource("2_tuyoq")
@@ -87,6 +93,18 @@ region = Rect2(384, 0, 48, 48)
 atlas = ExtResource("2_tuyoq")
 region = Rect2(432, 0, 48, 48)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_l71n6"]
+atlas = ExtResource("3_qlg0r")
+region = Rect2(144, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ke2ow"]
+atlas = ExtResource("3_qlg0r")
+region = Rect2(192, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_apa73"]
+atlas = ExtResource("3_qlg0r")
+region = Rect2(240, 0, 48, 48)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_g2els"]
 atlas = ExtResource("1_3vyb7")
 region = Rect2(0, 0, 48, 48)
@@ -142,14 +160,6 @@ region = Rect2(96, 0, 48, 48)
 [sub_resource type="AtlasTexture" id="AtlasTexture_4ni07"]
 atlas = ExtResource("3_qlg0r")
 region = Rect2(144, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_l71n6"]
-atlas = ExtResource("3_qlg0r")
-region = Rect2(192, 0, 48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ke2ow"]
-atlas = ExtResource("3_qlg0r")
-region = Rect2(240, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ujl30"]
 atlas = ExtResource("4_tuyoq")
@@ -288,6 +298,20 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_l71n6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ke2ow")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_apa73")
+}],
+"loop": false,
+"name": &"fall",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_g2els")
 }, {
 "duration": 1.0,
@@ -333,14 +357,8 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_4ni07")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_l71n6")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ke2ow")
 }],
-"loop": true,
+"loop": false,
 "name": &"jump",
 "speed": 10.0
 }, {
@@ -372,7 +390,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_md1ol")
 }],
-"loop": true,
+"loop": false,
 "name": &"land",
 "speed": 10.0
 }, {
@@ -422,3 +440,21 @@ autoplay = "idle"
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -13)
 shape = SubResource("CapsuleShape2D_jej6c")
+
+[node name="StateMachine" type="Node" parent="."]
+script = ExtResource("7_fjrip")
+
+[node name="Idle" type="Node" parent="StateMachine"]
+script = ExtResource("8_smehm")
+
+[node name="Running" type="Node" parent="StateMachine"]
+script = ExtResource("9_d2wvv")
+
+[node name="Jumping" type="Node" parent="StateMachine"]
+script = ExtResource("10_3v2ag")
+
+[node name="Falling" type="Node" parent="StateMachine"]
+script = ExtResource("11_jej6c")
+
+[node name="Crouching" type="Node" parent="StateMachine"]
+script = ExtResource("12_3v2ag")
