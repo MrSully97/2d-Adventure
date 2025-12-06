@@ -7,6 +7,7 @@ const FALLING = "Falling"
 const CROUCHING = "Crouching"
 const LEDGE_HANGING = "Ledge_Hang"
 const LEDGE_CLIMBING = "Ledge_Climb"
+const AIR_SPIN = "Air_Spin"
 
 var player: Player
 

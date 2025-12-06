@@ -22,5 +22,9 @@ func physics_update(_delta: float) -> void:
 			finished.emit(RUNNING)
 		return
 	# Ledge grab check
-	if player.velocity.y > 0 and Input.is_action_pressed("jump") and player.can_grab_ledge():
+	if player.velocity.y > 0 and Input.is_action_pressed("grab") and player.can_grab_ledge():
 		finished.emit(LEDGE_HANGING)
+	
+	if !player.is_on_floor() and Input.is_action_just_pressed("jump") and player.can_dash:
+		player.can_dash = false
+		finished.emit(AIR_SPIN)
