@@ -12,6 +12,9 @@ const TILE_SIZE: Vector2 = Vector2(16, 16)
 @onready var animation_player = $AnimatedSprite2D
 @onready var fsm := $StateMachine
 
+@onready var ledge_grab_miss = $ledge_grab_miss
+@onready var ledge_grab_hit = $ledge_grab_hit
+
 
 #func _physics_process(delta: float) -> void:
 	## Add the gravity.
