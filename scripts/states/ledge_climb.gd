@@ -23,7 +23,6 @@ func enter(previous_state_path: String, data := {}) -> void:
 		climb_target.x -= player.TILE_SIZE.x
 	else:
 		climb_target.x += player.TILE_SIZE.x
-	print(climb_target)
 	
 	player.animation_player.play(climb_animation)
 	

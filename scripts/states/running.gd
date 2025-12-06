@@ -1,6 +1,7 @@
 extends PlayerState
 
 func enter(previous_state_path: String, data := {}) -> void:
+	player.can_dash = true
 	player.animation_player.play("run")
 
 func changeAnimationSpeed(input: float) -> void:

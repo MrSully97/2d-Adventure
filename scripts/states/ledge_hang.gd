@@ -35,7 +35,7 @@ func exit() -> void:
 
 func physics_update(_delta: float) -> void:
 	# Must keep holding jump to stay
-	if not Input.is_action_pressed("jump"):
+	if not Input.is_action_pressed("grab"):
 		finished.emit(FALLING)
 		return
 	

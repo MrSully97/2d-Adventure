@@ -1,7 +1,8 @@
-[gd_scene load_steps=77 format=3 uid="uid://cny27g58i2o5r"]
+[gd_scene load_steps=85 format=3 uid="uid://cny27g58i2o5r"]
 
 [ext_resource type="Texture2D" uid="uid://b62od7w55yndu" path="res://assets/sprites/Player Movement v1/player idle.png" id="1_3vyb7"]
 [ext_resource type="Script" uid="uid://2yqphclqplct" path="res://scripts/player.gd" id="1_g2els"]
+[ext_resource type="Texture2D" uid="uid://cww31tojg1858" path="res://assets/sprites/Player Movement v2/player air spin.png" id="2_a8ls1"]
 [ext_resource type="Texture2D" uid="uid://djjs14si2p5fn" path="res://assets/sprites/Player Movement v2/Player Crouch-Idle.png" id="2_tuyoq"]
 [ext_resource type="Texture2D" uid="uid://dou32dcsomqx4" path="res://assets/sprites/Player Movement v1/player run.png" id="3_qhqgy"]
 [ext_resource type="Texture2D" uid="uid://c7jpqsfpywq0v" path="res://assets/sprites/Player Movement v1/player jump.png" id="3_qlg0r"]
@@ -15,6 +16,31 @@
 [ext_resource type="Script" uid="uid://momsybih5v3m" path="res://scripts/states/crouching.gd" id="12_3v2ag"]
 [ext_resource type="Script" uid="uid://g5mf1bxrdnq" path="res://scripts/states/ledge_climb.gd" id="13_jej6c"]
 [ext_resource type="Script" uid="uid://dgv8vewjcorks" path="res://scripts/states/ledge_hang.gd" id="15_oprun"]
+[ext_resource type="Script" uid="uid://b8cb7xjfmxm8y" path="res://scripts/states/air_spin.gd" id="17_qfm1y"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_au7lq"]
+atlas = ExtResource("2_a8ls1")
+region = Rect2(0, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nubpm"]
+atlas = ExtResource("2_a8ls1")
+region = Rect2(48, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ua5cf"]
+atlas = ExtResource("2_a8ls1")
+region = Rect2(96, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_51ujp"]
+atlas = ExtResource("2_a8ls1")
+region = Rect2(144, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tk41t"]
+atlas = ExtResource("2_a8ls1")
+region = Rect2(192, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fuw3a"]
+atlas = ExtResource("2_a8ls1")
+region = Rect2(240, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bj30b"]
 atlas = ExtResource("2_tuyoq")
@@ -256,6 +282,29 @@ region = Rect2(336, 0, 48, 48)
 animations = [{
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_au7lq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nubpm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ua5cf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_51ujp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tk41t")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fuw3a")
+}],
+"loop": false,
+"name": &"air_spin",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_bj30b")
 }, {
 "duration": 1.0,
@@ -482,10 +531,10 @@ script = ExtResource("1_g2els")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -16)
 sprite_frames = SubResource("SpriteFrames_3v2ag")
-animation = &"run"
+animation = &"air_spin"
 autoplay = "idle"
-frame = 3
-frame_progress = 0.34165946
+frame = 5
+frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -13)
@@ -514,6 +563,9 @@ script = ExtResource("13_jej6c")
 
 [node name="Ledge_Hang" type="Node" parent="StateMachine"]
 script = ExtResource("15_oprun")
+
+[node name="Air_Spin" type="Node" parent="StateMachine"]
+script = ExtResource("17_qfm1y")
 
 [node name="ledge_grab_top" type="RayCast2D" parent="."]
 position = Vector2(0, -24)

@@ -2,6 +2,7 @@ extends PlayerState
 
 func enter(previous_state_path: String, data := {}) -> void:
 	#player.velocity.x = 0.0
+	player.can_dash = true
 	player.animation_player.play("idle")
 
 func physics_update(_delta: float) -> void:
