@@ -8,6 +8,8 @@ const CROUCHING = "Crouching"
 const LEDGE_HANGING = "Ledge_Hang"
 const LEDGE_CLIMBING = "Ledge_Climb"
 const AIR_SPIN = "Air_Spin"
+const WALL_LAND = "Wall_Land"
+const WALL_SLIDE = "Wall_Slide"
 
 var player: Player
 
