@@ -8,6 +8,7 @@ class_name Player extends CharacterBody2D
 @export var on_ledge: bool = false
 @export var direction: float = 0.0
 var can_dash: bool = true
+var can_wall_kick: bool = true 
 const TILE_SIZE: Vector2 = Vector2(16, 16)
 const TILE_TOP_LEFT = Vector2(0, 0)
 const TILE_TOP_RIGHT = Vector2(1, 0)
@@ -38,3 +39,14 @@ func can_grab_ledge() -> bool:
 func get_tile_corner_from_point(world_point: Vector2, corner: Vector2) -> Vector2:
 	var tile = (world_point / TILE_SIZE).floor()
 	return (tile + corner) * TILE_SIZE
+	
+func can_grab_wall() -> bool:
+	_update_ledge_raycasts()
+	# Top ray hits the ledge (empty space above wall)
+	if not ledge_grab_top.is_colliding():
+		return false
+	# Wall ray must not hit anything (there's a grabbable edge)
+	if not ledge_grab_wall.is_colliding():
+		return false
+	print("Can Wall Land")
+	return true

@@ -5,7 +5,6 @@ func enter(previous_state_path: String, data := {}) -> void:
 
 func physics_update(_delta: float) -> void:
 	var input_direction_x := Input.get_axis("move_left", "move_right")
-	player.direction = input_direction_x
 	
 	if input_direction_x != 0:
 		player.animation_player.flip_h = input_direction_x < 0
@@ -24,6 +23,10 @@ func physics_update(_delta: float) -> void:
 	# Ledge grab check
 	if player.velocity.y > 0 and Input.is_action_pressed("grab") and player.can_grab_ledge():
 		finished.emit(LEDGE_HANGING)
+	elif player.velocity.y > 0 and Input.is_action_pressed("grab") and player.can_grab_wall():
+		player.can_dash = true
+		player.direction = input_direction_x
+		finished.emit(WALL_LAND)
 	
 	if !player.is_on_floor() and Input.is_action_just_pressed("jump") and player.can_dash:
 		player.can_dash = false
