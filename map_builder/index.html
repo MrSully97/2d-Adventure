@@ -98,6 +98,7 @@
             Preview
           </button>
           <button id="clearLayer" class="bg-yellow-600 hover:bg-yellow-500 px-3 py-1 rounded text-sm">Clear Layer</button>
+          <button id="fillLayer" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-sm">Fill Layer</button>
           <button id="spawnTool" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-sm flex items-center gap-2">
             <!-- spawn icon (simple target) -->
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12zm0-2a4 4 0 100-8 4 4 0 000 8z" clip-rule="evenodd"/></svg> Spawn
@@ -158,9 +159,10 @@ const previewCtx = previewCanvas.getContext('2d');
 let mapWidth = parseInt(document.getElementById('mapWidth').value,10);
 let mapHeight = parseInt(document.getElementById('mapHeight').value,10);
 
-// normalized layers: { name, visible, tiles: [ [ {tx,ty}, ... ], ... ] }
+// normalized layers: { name, visible, tiles: [ [ {tx,ty}, ... ], ... ], _cache: offscreen canvas }
 let layers = [];
 let activeLayer = 0;
+let layerCaches = []; // offscreen canvases for each layer
 
 const layersList = document.getElementById('layersList');
 document.getElementById('addLayer').addEventListener('click', addLayer);
@@ -181,6 +183,7 @@ document.getElementById('brushSize').addEventListener('change', ()=> {});
 document.getElementById('toggleGrid').addEventListener('click', ()=> { showGrid = !showGrid; draw(); });
 document.getElementById('toggleLayerPreview').addEventListener('click', ()=> { layerPreview = !layerPreview; draw(); });
 document.getElementById('clearLayer').addEventListener('click', ()=> { if(confirm('Clear active layer?')) clearActiveLayer(); });
+document.getElementById('fillLayer').addEventListener('click', ()=> { if(selectedTile >= 0) fillActiveLayer(); else alert('Please select a tile first'); });
 
 const statusEl = document.getElementById('status');
 const tilesetInfo = document.getElementById('tilesetInfo');
@@ -391,6 +394,49 @@ function createEmptyLayer(name){
   return { name: name||`Layer ${layers.length}`, visible:true, tiles: arr };
 }
 
+/* Layer caching for performance */
+function initLayerCaches(){
+  layerCaches = layers.map(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = mapWidth * tileSize;
+    canvas.height = mapHeight * tileSize;
+    return { canvas, isDirty: true };
+  });
+}
+
+function invalidateLayerCache(layerIdx){
+  if(layerCaches[layerIdx]) {
+    layerCaches[layerIdx].isDirty = true;
+  }
+}
+
+function invalidateAllLayerCaches(){
+  for(const cache of layerCaches) {
+    cache.isDirty = true;
+  }
+}
+
+function redrawLayerCache(layerIdx){
+  if(!layerCaches[layerIdx] || !tilesetImage) return;
+  const L = layers[layerIdx];
+  const cache = layerCaches[layerIdx];
+  const ctx = cache.canvas.getContext('2d');
+  ctx.clearRect(0, 0, cache.canvas.width, cache.canvas.height);
+  
+  const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
+  for(let y=0; y<mapHeight; y++){
+    for(let x=0; x<mapWidth; x++){
+      const cell = L.tiles[y][x];
+      if(cell.tx >= 0) {
+        const sx = cell.tx * tileSize;
+        const sy = cell.ty * tileSize;
+        ctx.drawImage(tilesetImage, sx, sy, tileSize, tileSize, x*tileSize, y*tileSize, tileSize, tileSize);
+      }
+    }
+  }
+  cache.isDirty = false;
+}
+
 function createMap(w,h){
   mapWidth = w; mapHeight = h;
   if(layers.length === 0) {
@@ -418,6 +464,7 @@ function createMap(w,h){
   if (spawnPoint.x >= mapWidth || spawnPoint.y >= mapHeight) {
     spawnPoint = { x: -1, y: -1 };
   }
+  initLayerCaches();
   resizeCanvases();
   refreshLayersUI();
   draw();
@@ -432,6 +479,7 @@ function addLayer(){
   const name = prompt('Layer name', `Layer ${layers.length}`);
   layers.splice(activeLayer+1, 0, createEmptyLayer(name));
   activeLayer = activeLayer+1;
+  initLayerCaches();
   refreshLayersUI();
   draw();
 }
@@ -441,6 +489,7 @@ function removeLayer(){
   if(!confirm('Remove active layer?')) return;
   layers.splice(activeLayer,1);
   activeLayer = Math.max(0, activeLayer-1);
+  initLayerCaches();
   refreshLayersUI();
   draw();
 }
@@ -549,6 +598,7 @@ function applyBrushAt(tileX, tileY, tileCoord){
       }
     }
   }
+  invalidateLayerCache(activeLayer);
 }
 
 // New: Set spawn point at mouse event
@@ -575,6 +625,13 @@ function resizeCanvases(){
   mapCanvas.height = Math.max(200, Math.floor(wrap.clientHeight));
   previewCanvas.width = mapCanvas.width;
   previewCanvas.height = mapCanvas.height;
+  
+  // Resize layer cache canvases
+  for(const cache of layerCaches) {
+    cache.canvas.width = mapWidth * tileSize;
+    cache.canvas.height = mapHeight * tileSize;
+    cache.isDirty = true;
+  }
 }
 window.addEventListener('resize', ()=> { resizeCanvases(); draw(); });
 
@@ -594,6 +651,21 @@ function clearActiveLayer(){
       layers[activeLayer].tiles[y][x] = { tx:-1, ty:-1 };
     }
   }
+  invalidateLayerCache(activeLayer);
+  draw();
+}
+
+function fillActiveLayer(){
+  if(!layers[activeLayer]) return;
+  if(selectedTile < 0 || !tilesetImage) return;
+  const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
+  const tileCoord = { tx: selectedTile % across, ty: Math.floor(selectedTile / across) };
+  for(let y=0;y<mapHeight;y++){
+    for(let x=0;x<mapWidth;x++){
+      layers[activeLayer].tiles[y][x] = { tx: tileCoord.tx, ty: tileCoord.ty };
+    }
+  }
+  invalidateLayerCache(activeLayer);
   draw();
 }
 
@@ -607,21 +679,20 @@ function draw(){
   mapCtx.fillStyle = '#070707';
   mapCtx.fillRect(0,0,mapWidth*tileSize, mapHeight*tileSize);
 
-  // draw layers bottom->top
+  // draw layers bottom->top using cached canvases
   for(let li=0; li<layers.length; li++){
     const L = layers[li];
     if(!L.visible) continue;
-    if(!tilesetImage) continue; // none to draw
-    const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
-    for(let y=0;y<mapHeight;y++){
-      for(let x=0;x<mapWidth;x++){
-        const cell = L.tiles[y][x];
-        if(cell.tx >= 0) {
-          const sx = cell.tx * tileSize;
-          const sy = cell.ty * tileSize;
-          mapCtx.drawImage(tilesetImage, sx, sy, tileSize, tileSize, x*tileSize, y*tileSize, tileSize, tileSize);
-        }
-      }
+    if(!tilesetImage) continue;
+    
+    // Redraw cache if dirty
+    if(layerCaches[li] && layerCaches[li].isDirty) {
+      redrawLayerCache(li);
+    }
+    
+    // Draw cached layer
+    if(layerCaches[li]) {
+      mapCtx.drawImage(layerCaches[li].canvas, 0, 0);
     }
   }
 
@@ -744,17 +815,66 @@ function drawPreviewClear(){
 
 /* ---------- Save / Load JSON ---------- */
 function buildExportJSON(){
+  // Compress export: background (layer index 0) may be exported as a rectangle
+  // defined by two diagonal points + tile if it's a uniform filled rectangle.
+  // Other layers are exported as arrays of placed tiles only (x,y,tx,ty).
+  const outLayers = layers.map((L, idx) => {
+    // helper: collect all placed tiles
+    const placed = [];
+    for (let y = 0; y < mapHeight; y++) {
+      for (let x = 0; x < mapWidth; x++) {
+        const c = L.tiles[y][x];
+        if (c && c.tx >= 0) placed.push({ x, y, tx: c.tx, ty: c.ty });
+      }
+    }
+
+    if (idx === 0) {
+      // Attempt to compress the background layer as a uniform filled rectangle.
+      if (placed.length === 0) {
+        return { name: L.name, visible: !!L.visible, tiles: [] };
+      }
+
+      let minX = mapWidth, minY = mapHeight, maxX = 0, maxY = 0;
+      const first = placed[0];
+      let sameTile = true;
+      for (const p of placed) {
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
+        if (p.tx !== first.tx || p.ty !== first.ty) sameTile = false;
+      }
+      const expected = (maxX - minX + 1) * (maxY - minY + 1);
+      const fullRect = (placed.length === expected);
+
+      if (sameTile && fullRect) {
+        return {
+          name: L.name,
+          visible: !!L.visible,
+          tiles: {
+            type: 'rect',
+            p1: { x: minX, y: minY },
+            p2: { x: maxX, y: maxY },
+            tile: { tx: first.tx, ty: first.ty }
+          }
+        };
+      }
+
+      // Not compressible -> return placed list
+      return { name: L.name, visible: !!L.visible, tiles: placed };
+    }
+
+    // Other layers: export only placed tiles
+    return { name: L.name, visible: !!L.visible, tiles: placed };
+  });
+
   return {
     name: "MyMap",
     width: mapWidth,
     height: mapHeight,
     tile_size: tileSize,
     spawn_point: spawnPoint.x >= 0 ? { x: spawnPoint.x, y: spawnPoint.y } : null,
-    layers: layers.map(L => ({
-      name: L.name,
-      visible: !!L.visible,
-      tiles: L.tiles.map(row => row.map(cell => ({ tx: cell.tx, ty: cell.ty })))
-    }))
+    layers: outLayers
   };
 }
 
@@ -793,23 +913,67 @@ function loadFromJSONObj(j){
   mapWidth = j.width || mapWidth; mapHeight = j.height || mapHeight;
   spawnPoint = j.spawn_point && j.spawn_point.x >= 0 && j.spawn_point.y >= 0 ? { x: j.spawn_point.x, y: j.spawn_point.y } : { x: -1, y: -1 };
   layers = [];
-  if(Array.isArray(j.layers) && j.layers.length){
-    for(const L of j.layers){
-      if(L.tiles && Array.isArray(L.tiles) && L.tiles.length === mapHeight) {
-        // normalize tiles to ensure tx/ty exist
-        const normalized = [];
-        for(let y=0;y<mapHeight;y++){
-          const row = [];
-          for(let x=0;x<mapWidth;x++){
-            const c = (L.tiles[y] && L.tiles[y][x]) ? L.tiles[y][x] : { tx:-1, ty:-1 };
-            row.push({ tx: c.tx ?? -1, ty: c.ty ?? -1 });
+  if (Array.isArray(j.layers) && j.layers.length) {
+    for (const L of j.layers) {
+      // produce a normalized grid filled with empty cells
+      const normalized = [];
+      for (let y = 0; y < mapHeight; y++) {
+        const row = [];
+        for (let x = 0; x < mapWidth; x++) row.push({ tx: -1, ty: -1 });
+        normalized.push(row);
+      }
+
+      if (!L.tiles) {
+        layers.push({ name: L.name || 'Layer', visible: !!L.visible, tiles: normalized });
+        continue;
+      }
+
+      // Case A: legacy full 2D array (rows)
+      if (Array.isArray(L.tiles) && L.tiles.length === mapHeight && Array.isArray(L.tiles[0])) {
+        for (let y = 0; y < mapHeight; y++) {
+          for (let x = 0; x < mapWidth; x++) {
+            const c = (L.tiles[y] && L.tiles[y][x]) ? L.tiles[y][x] : { tx: -1, ty: -1 };
+            normalized[y][x] = { tx: c.tx ?? -1, ty: c.ty ?? -1 };
           }
-          normalized.push(row);
         }
         layers.push({ name: L.name || 'Layer', visible: !!L.visible, tiles: normalized });
-      } else {
-        layers.push(createEmptyLayer(L.name || 'Layer'));
+        continue;
       }
+
+      // Case B: compressed rect format
+      if (L.tiles && typeof L.tiles === 'object' && L.tiles.type === 'rect') {
+        const p1 = L.tiles.p1 || { x: 0, y: 0 };
+        const p2 = L.tiles.p2 || { x: 0, y: 0 };
+        const tile = L.tiles.tile || { tx: -1, ty: -1 };
+        const sx = Math.max(0, Math.min(p1.x, p2.x));
+        const sy = Math.max(0, Math.min(p1.y, p2.y));
+        const ex = Math.min(mapWidth - 1, Math.max(p1.x, p2.x));
+        const ey = Math.min(mapHeight - 1, Math.max(p1.y, p2.y));
+        for (let y = sy; y <= ey; y++) {
+          for (let x = sx; x <= ex; x++) {
+            normalized[y][x] = { tx: tile.tx ?? -1, ty: tile.ty ?? -1 };
+          }
+        }
+        layers.push({ name: L.name || 'Layer', visible: !!L.visible, tiles: normalized });
+        continue;
+      }
+
+      // Case C: array of placed tiles [{x,y,tx,ty}, ...]
+      if (Array.isArray(L.tiles)) {
+        for (const p of L.tiles) {
+          if (!p) continue;
+          const x = Math.floor(p.x);
+          const y = Math.floor(p.y);
+          if (x >= 0 && y >= 0 && x < mapWidth && y < mapHeight) {
+            normalized[y][x] = { tx: (p.tx ?? -1), ty: (p.ty ?? -1) };
+          }
+        }
+        layers.push({ name: L.name || 'Layer', visible: !!L.visible, tiles: normalized });
+        continue;
+      }
+
+      // Unknown format: push empty
+      layers.push({ name: L.name || 'Layer', visible: !!L.visible, tiles: normalized });
     }
   } else {
     layers.push(createEmptyLayer('Layer 0'));
@@ -818,6 +982,7 @@ function loadFromJSONObj(j){
   activeLayer = Math.max(0, layers.length-1);
   document.getElementById('mapWidth').value = mapWidth;
   document.getElementById('mapHeight').value = mapHeight;
+  initLayerCaches();
   resizeCanvases();
   refreshLayersUI();
   draw();

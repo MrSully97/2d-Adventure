@@ -59,6 +59,16 @@ func get_random_bg_tile() -> Vector2i:
 	var y = randi_range(bg_min.y, bg_max.y)
 	return Vector2i(x, y)
 
+# Helper to set a tile safely (top-level function so it's callable at runtime)
+func _set_tile_at(idx: int, px: int, py: int, tx: int, ty: int) -> void:
+	if tx == -1:
+		return
+	# ensure coordinates inside map bounds
+	if px < 0 or py < 0 or px >= map_width or py >= map_height:
+		return
+	var atlas_coord = Vector2i(int(tx), int(ty))
+	set_cell(int(idx), Vector2i(int(px), int(py)), tileset_source_id, atlas_coord, 0)
+
 func load_map_from_json(path: String) -> void:
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
@@ -82,26 +92,72 @@ func load_map_from_json(path: String) -> void:
 	while current_layers < json_layers.size():
 		add_layer(current_layers)
 		current_layers += 1
-	# Load tiles
-	for layer_index in json_layers.size():
+	# Load tiles (support multiple export formats):
+	# - Legacy 2D rows: tiles = [[{tx,ty}, ...], ...]
+	# - Rect compression: tiles = { type: 'rect', p1:{x,y}, p2:{x,y}, tile:{tx,ty} }
+	# - Placed tiles list: tiles = [{x,y,tx,ty}, ...]
+	for layer_index in range(json_layers.size()):
 		var layer_data = json_layers[layer_index]
-		var tiles_2d = layer_data.tiles
-		for y in range(tiles_2d.size()):
-			var row = tiles_2d[y]
-			for x in range(row.size()):
-				var tile = row[x]
-				var tx = tile.tx
-				var ty = tile.ty
-				if tx == -1:
-					continue # empty tile
-				var atlas_coord = Vector2i(tx, ty)
-				set_cell(
-					layer_index, # TileMap layer
-					Vector2i(x, y), # Position
-					tileset_source_id, # Your exported Tileset source ID
-					atlas_coord, # tileset atlas coords
-					0 # alternative tile index
-				)
+		if layer_data == null:
+			continue
+		var tiles_info = layer_data.tiles
+		if tiles_info == null:
+			continue
+
+		# Helper to set a tile safely (local function assigned to a variable)
+		var _set_tile_at = func(idx, px, py, tx, ty):
+			if tx == -1:
+				return
+			# ensure coordinates inside map bounds
+			if px < 0 or py < 0 or px >= map_width or py >= map_height:
+				return
+			var atlas_coord = Vector2i(int(tx), int(ty))
+			set_cell(int(idx), Vector2i(int(px), int(py)), tileset_source_id, atlas_coord, 0)
+
+		# Case: legacy 2D array (rows of cells)
+		if tiles_info is Array and tiles_info.size() == map_height and tiles_info.size() > 0 and tiles_info[0] is Array:
+			for y in range(tiles_info.size()):
+				var row = tiles_info[y]
+				for x in range(row.size()):
+					var cell = row[x]
+					if cell == null:
+						continue
+					var tx = int(cell.tx)
+					var ty = int(cell.ty)
+					_set_tile_at(layer_index, x, y, tx, ty)
+			continue
+
+		# Case: rect compressed format
+		if tiles_info is Dictionary and tiles_info.has("type") and String(tiles_info.type) == "rect":
+			var p1 = tiles_info.p1 if tiles_info.has("p1") else {"x":0, "y":0}
+			var p2 = tiles_info.p2 if tiles_info.has("p2") else {"x":0, "y":0}
+			var tile = tiles_info.tile if tiles_info.has("tile") else {"tx":-1, "ty":-1}
+			var sx = int(min(p1.x, p2.x))
+			var sy = int(min(p1.y, p2.y))
+			var ex = int(max(p1.x, p2.x))
+			var ey = int(max(p1.y, p2.y))
+			sx = clamp(sx, 0, map_width - 1)
+			sy = clamp(sy, 0, map_height - 1)
+			ex = clamp(ex, 0, map_width - 1)
+			ey = clamp(ey, 0, map_height - 1)
+			for y in range(sy, ey + 1):
+				for x in range(sx, ex + 1):
+					_set_tile_at(layer_index, x, y, int(tile.tx), int(tile.ty))
+			continue
+
+		# Case: array of placed tiles [{x,y,tx,ty}, ...]
+		if tiles_info is Array:
+			for p in tiles_info:
+				if p == null:
+					continue
+				var px = int(p.x)
+				var py = int(p.y)
+				var tx = int(p.tx)
+				var ty = int(p.ty)
+				_set_tile_at(layer_index, px, py, tx, ty)
+			continue
+
+		# Unknown format: skip
 
 # ------------------------------------
 # MAIN DUNGEON GENERATION
