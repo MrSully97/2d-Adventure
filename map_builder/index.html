@@ -1,135 +1,131 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Advanced Tile Map Builder</title>
+
+  <!-- Tailwind CDN (for quick prototype) -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root {
-      --bg: #141414;
-      --panel: #1f1f1f;
-      --muted: #9aa0a6;
-      --accent: #2e8bff;
-    }
-    html,body { height:100%; margin:0; font-family:Inter,Arial,Helvetica,sans-serif; background:var(--bg); color:#eee; }
-    .app { display:flex; gap:12px; padding:12px; height:100%; box-sizing:border-box; }
-    .left, .right { background:var(--panel); padding:12px; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.6); }
-    .left { width:320px; flex-shrink:0; overflow:auto; }
-    .right { flex:1; display:flex; flex-direction:column; gap:12px; overflow:hidden; }
-    h2 { margin:6px 0 10px 0; font-size:16px; color:#fff; }
-    label, button { font-size:13px; }
-    input[type="number"] { width:70px; }
-    #tilesetCanvas, #mapCanvas { display:block; background:#111; image-rendering:pixelated; border:1px solid #333; }
-    #tilesetCanvas { width:100%; max-width:280px; height:auto; cursor:crosshair; }
-    .controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
-    .layers { margin-top:8px; max-height:260px; overflow:auto; border:1px solid #2a2a2a; padding:6px; border-radius:6px; }
-    .layerItem { display:flex; gap:8px; align-items:center; padding:6px; border-radius:6px; margin-bottom:6px; background:rgba(255,255,255,0.02); }
-    .layerItem.active { outline:2px solid rgba(200,200,50,0.12); }
-    .layerItem input[type=text] { background:transparent; border:0; color: #eee; width:120px; }
-    .small { font-size:12px; color:var(--muted); }
-    .btn { background:#2b2b2b; color:#ddd; padding:6px 8px; border-radius:6px; border:1px solid #333; cursor:pointer; }
-    .btn:hover { border-color:var(--accent); }
-    #toolbar { display:flex; gap:8px; align-items:center; }
-    .statusRow { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-top:8px; font-size:13px; color:var(--muted); }
-    .rightTop { display:flex; gap:12px; align-items:center; }
-    #mapContainer { flex:1; background:#0d0d0d; border-radius:6px; display:flex; gap:12px; padding:12px; align-items:flex-start; overflow:hidden; }
-    #canvasWrap { background:#0b0b0b; border-radius:6px; overflow:hidden; position:relative; flex:1; display:flex; align-items:center; justify-content:center; }
-    #mapCanvas { cursor:crosshair; }
-    #preview { position:absolute; pointer-events:none; z-index:20; }
-    footer { font-size:12px; color:var(--muted); margin-top:6px; }
-    input[type=file] { display:none; }
+    /* small helper so canvases stay crisp with pixel art */
+    canvas { image-rendering: pixelated; }
   </style>
 </head>
-<body>
-  <div class="app">
-    <div class="left">
-      <h2>Tileset</h2>
-      <label class="btn" id="uploadTilesetBtn">Upload Tileset (16×16)</label>
-      <input id="tilesetInput" type="file" accept="image/*">
-      <div style="margin-top:10px;">
-        <canvas id="tilesetCanvas"></canvas>
+<body class="min-h-screen bg-gray-900 text-slate-100 font-sans">
+  <div class="p-4 h-screen box-border flex gap-4">
+    <!-- LEFT PANEL -->
+    <aside class="w-80 bg-slate-800 rounded-xl p-4 flex-shrink-0 shadow-lg overflow-auto">
+      <h2 class="text-white text-sm font-semibold mb-2">Tileset</h2>
+
+      <label id="uploadTilesetBtn" class="block mb-2">
+        <input id="tilesetInput" type="file" accept="image/*" class="hidden">
+        <button type="button" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-100 py-2 rounded-md flex items-center justify-center gap-2">
+          <!-- heroicon: upload -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 8a1 1 0 011-1h3V4a1 1 0 112 0v3h3a1 1 0 011 1v7a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"/></svg>
+          Upload Tileset (e.g. 16×16)
+        </button>
+      </label>
+
+      <div class="bg-slate-900 rounded-md p-2 border border-slate-700">
+        <canvas id="tilesetCanvas" class="w-full block border border-slate-700 rounded-sm"></canvas>
       </div>
 
-      <div style="margin-top:12px;">
-        <div class="controls">
-          <div>
-            <label class="small">Tile Size</label><br>
-            <input id="tileSizeInput" type="number" value="16" min="4" max="128" style="width:80px;">
-          </div>
-
-          <div>
-            <label class="small">Brush</label><br>
-            <select id="brushSize">
-              <option value="1">1×1</option>
-              <option value="2">2×2</option>
-              <option value="3">3×3</option>
-            </select>
-          </div>
+      <div class="mt-3 grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-slate-400">Tile Size</label>
+          <input id="tileSizeInput" type="number" value="16" min="4" max="128" class="w-full mt-1 bg-slate-800 rounded px-2 py-1 text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400">Brush</label>
+          <select id="brushSize" class="w-full mt-1 bg-slate-800 rounded px-2 py-1 text-sm">
+            <option value="1">1×1</option>
+            <option value="2">2×2</option>
+            <option value="3">3×3</option>
+          </select>
         </div>
       </div>
 
-      <h2 style="margin-top:14px;">Layers</h2>
-      <div class="controls">
-        <button class="btn" id="addLayer">+ Add Layer</button>
-        <button class="btn" id="removeLayer">Remove</button>
-        <button class="btn" id="layerUp">▲</button>
-        <button class="btn" id="layerDown">▼</button>
+      <h2 class="text-white text-sm font-semibold mt-4 mb-2">Layers</h2>
+      <div class="flex gap-2 mb-2">
+        <button id="addLayer" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-1 rounded text-sm">+ Add</button>
+        <button id="removeLayer" class="flex-1 bg-red-600 hover:bg-red-500 py-1 rounded text-sm">Remove</button>
+      </div>
+      <div class="flex gap-2 mb-3">
+        <button id="layerUp" class="w-1/2 bg-slate-700 py-1 rounded text-sm">▲</button>
+        <button id="layerDown" class="w-1/2 bg-slate-700 py-1 rounded text-sm">▼</button>
       </div>
 
-      <div class="layers" id="layersList"></div>
+      <div id="layersList" class="space-y-2 max-h-48 overflow-auto"></div>
 
-      <div style="margin-top:10px;">
-        <label class="small">Map Size</label><br>
-        Width: <input id="mapWidth" type="number" value="30"> Height: <input id="mapHeight" type="number" value="20">
-        <button class="btn" id="createMap">Create</button>
-      </div>
-
-      <h2 style="margin-top:12px;">File</h2>
-      <div class="controls">
-        <button class="btn" id="downloadJson">Download JSON</button>
-        <label class="btn" id="loadJsonLabel">Load JSON</label>
-        <input id="loadJsonInput" type="file" accept=".json">
-      </div>
-
-      <div style="margin-top:12px;">
-        <div class="small">Pan: middle-mouse drag OR hold SPACE + left-drag</div>
-        <div class="small">Zoom: mouse wheel</div>
-        <div class="small">Erase: right-click</div>
-        <div class="small">Drag paint: left-button drag</div>
-      </div>
-
-      <footer>Advanced Tile Map Builder — dynamic layers, zoom, pan, save/load</footer>
-    </div>
-
-    <div class="right">
-      <div class="rightTop">
-        <div id="toolbar">
-          <button class="btn" id="toggleGrid">Toggle Grid</button>
-          <button class="btn" id="toggleLayerPreview">Toggle Layer Preview</button>
-          <button class="btn" id="clearLayer">Clear Layer</button>
-        </div>
-
-        <div style="margin-left:auto;">
-          <div class="small" id="status">Selected tile: - | Layer: - | Scale: 100%</div>
+      <div class="mt-3">
+        <label class="text-xs text-slate-400">Map Size</label>
+        <div class="mt-1 flex gap-2 items-center">
+          <input id="mapWidth" type="number" value="30" class="w-20 bg-slate-800 rounded px-2 py-1 text-sm">
+          <input id="mapHeight" type="number" value="20" class="w-20 bg-slate-800 rounded px-2 py-1 text-sm">
+          <button id="createMap" class="ml-auto bg-indigo-600 hover:bg-indigo-500 px-3 py-1 rounded text-sm">Create</button>
         </div>
       </div>
 
-      <div id="mapContainer">
-        <div id="canvasWrap">
-          <canvas id="mapCanvas" width="800" height="600"></canvas>
-          <canvas id="preview" width="800" height="600"></canvas>
+      <h2 class="text-white text-sm font-semibold mt-4 mb-2">File</h2>
+      <div class="flex gap-2">
+        <button id="downloadJson" class="flex-1 bg-slate-700 hover:bg-slate-600 py-2 rounded text-sm">Download JSON</button>
+        <label id="loadJsonLabel" class="w-1/3">
+          <input id="loadJsonInput" type="file" accept=".json" class="hidden">
+          <button class="w-full bg-slate-700 hover:bg-slate-600 py-2 rounded text-sm">Load</button>
+        </label>
+      </div>
+
+      <div class="mt-3 text-xs text-slate-400 space-y-1">
+        <div>Pan: middle-mouse drag OR hold <kbd class="bg-slate-800 px-1 rounded">Space</kbd> + left-drag</div>
+        <div>Zoom: mouse wheel</div>
+        <div>Erase: right-click</div>
+        <div>Drag paint: left-button drag</div>
+      </div>
+
+      <div class="mt-4 text-xs text-slate-500">Advanced Tile Map Builder — dynamic layers, zoom, pan, save/load</div>
+    </aside>
+
+    <!-- RIGHT / CANVAS -->
+    <main class="flex-1 flex flex-col gap-3">
+      <div class="flex items-center gap-3">
+        <div class="flex gap-2" id="toolbar">
+          <button id="toggleGrid" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-sm flex items-center gap-2">
+            <!-- grid icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M3 3h4v4H3V3zm6 0h4v4H9V3zM3 9h4v4H3V9zm6 0h4v4H9V9zM3 15h4v2H3v-2zm6 0h4v2H9v-2z"/></svg> Grid
+          </button>
+          <button id="toggleLayerPreview" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-sm flex items-center gap-2">
+            Preview
+          </button>
+          <button id="clearLayer" class="bg-yellow-600 hover:bg-yellow-500 px-3 py-1 rounded text-sm">Clear Layer</button>
+          <button id="spawnTool" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-sm flex items-center gap-2">
+            <!-- spawn icon (simple target) -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12zm0-2a4 4 0 100-8 4 4 0 000 8z" clip-rule="evenodd"/></svg> Spawn
+          </button>
+        </div>
+
+        <div class="ml-auto text-sm text-slate-400" id="status">Selected tile: - | Layer: - | Scale: 100%</div>
+      </div>
+
+      <div id="mapContainer" class="flex-1 bg-slate-900 rounded-xl p-3 overflow-hidden">
+        <div id="canvasWrap" class="bg-black rounded w-full h-full relative flex items-center justify-center">
+          <canvas id="mapCanvas" width="800" height="600" class="absolute inset-0"></canvas>
+          <canvas id="preview" width="800" height="600" class="absolute inset-0 pointer-events-none"></canvas>
         </div>
       </div>
 
-      <div style="display:flex; gap:12px; align-items:center;">
-        <div class="small">Tileset:</div>
-        <div id="tilesetInfo" class="small">No tileset loaded</div>
+      <div class="flex items-center gap-3">
+        <div class="text-xs text-slate-400">Tileset:</div>
+        <div id="tilesetInfo" class="text-xs text-slate-300">No tileset loaded</div>
       </div>
-    </div>
+    </main>
   </div>
 
 <script>
 /* ==========================
    Advanced Tile Map Builder
+   Tailwind + memory fixes
+   + Spawn Point Feature
    ========================== */
 
 const tilesetInput = document.getElementById('tilesetInput');
@@ -143,12 +139,15 @@ let tileSize = parseInt(tileSizeInput.value, 10);
 const tilesAcrossHeight = { across:0, rows:0 };
 let tilesetImage = null;
 let selectedTile = -1;
+let currentTilesetObjectURL = null;
 
 uploadTilesetBtn.addEventListener('click', ()=> tilesetInput.click());
 tilesetInput.addEventListener('change', handleTilesetUpload);
 tileSizeInput.addEventListener('change', e=>{
   tileSize = Math.max(4, parseInt(e.target.value)||16);
   redrawTileset();
+  // cell coords depend on tile size -> re-create map tile world x/y
+  rebuildTileWorldCoords();
 });
 
 const mapCanvas = document.getElementById('mapCanvas');
@@ -159,7 +158,8 @@ const previewCtx = previewCanvas.getContext('2d');
 let mapWidth = parseInt(document.getElementById('mapWidth').value,10);
 let mapHeight = parseInt(document.getElementById('mapHeight').value,10);
 
-let layers = []; // array of {name, visible, tiles: [ [ {id,x,y}, ... ], ... ] }
+// normalized layers: { name, visible, tiles: [ [ {tx,ty}, ... ], ... ] }
+let layers = [];
 let activeLayer = 0;
 
 const layersList = document.getElementById('layersList');
@@ -177,7 +177,7 @@ document.getElementById('downloadJson').addEventListener('click', downloadJSON);
 document.getElementById('loadJsonLabel').addEventListener('click', ()=> document.getElementById('loadJsonInput').click());
 document.getElementById('loadJsonInput').addEventListener('change', loadJSONFromFile);
 
-document.getElementById('brushSize').addEventListener('change', ()=> {}); // used when painting
+document.getElementById('brushSize').addEventListener('change', ()=> {});
 document.getElementById('toggleGrid').addEventListener('click', ()=> { showGrid = !showGrid; draw(); });
 document.getElementById('toggleLayerPreview').addEventListener('click', ()=> { layerPreview = !layerPreview; draw(); });
 document.getElementById('clearLayer').addEventListener('click', ()=> { if(confirm('Clear active layer?')) clearActiveLayer(); });
@@ -188,20 +188,33 @@ const tilesetInfo = document.getElementById('tilesetInfo');
 let showGrid = true;
 let layerPreview = true;
 
+// New: Spawn point feature
+let spawnPoint = { x: -1, y: -1 };
+let spawnMode = false;
+const spawnTool = document.getElementById('spawnTool');
+spawnTool.addEventListener('click', () => {
+  spawnMode = !spawnMode;
+  spawnTool.classList.toggle('bg-indigo-600', spawnMode);
+  spawnTool.classList.toggle('bg-slate-700', !spawnMode);
+  mapCanvas.style.cursor = spawnMode ? 'pointer' : (spaceDown ? 'grab' : 'crosshair');
+});
+
 /* ---------- Map transform (zoom/pan) ---------- */
 let scale = 1.0;
-let offsetX = 0; // in screen px
+let offsetX = 0;
 let offsetY = 0;
 let isPanning = false;
 let panStart = {x:0,y:0, ox:0, oy:0};
 let spaceDown = false;
-window.addEventListener('keydown', e=> { if(e.code==='Space') { spaceDown = true; mapCanvas.style.cursor = 'grab'; } });
-window.addEventListener('keyup', e=> { if(e.code==='Space') { spaceDown = false; mapCanvas.style.cursor = 'crosshair'; } });
+window.addEventListener('keydown', e=> { if(e.code==='Space') { spaceDown = true; mapCanvas.style.cursor = spawnMode ? 'pointer' : 'grab'; } });
+window.addEventListener('keyup', e=> { if(e.code==='Space') { spaceDown = false; mapCanvas.style.cursor = spawnMode ? 'pointer' : 'crosshair'; } });
 
+// wheel zoom (preserve world point under cursor)
 mapCanvas.addEventListener('wheel', e=>{
   e.preventDefault();
-  const mouseX = e.offsetX;
-  const mouseY = e.offsetY;
+  const rect = mapCanvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
   const wheel = e.deltaY < 0 ? 1.12 : 0.88;
   const worldX = (mouseX - offsetX) / scale;
   const worldY = (mouseY - offsetY) / scale;
@@ -219,21 +232,32 @@ let isErasing = false;
 mapCanvas.addEventListener('mousedown', e=>{
   // left = paint, middle = pan, right = erase
   if(e.button === 1 || (e.button === 0 && spaceDown)) {
-    // start panning
     isPanning = true;
     panStart = { x: e.clientX, y: e.clientY, ox: offsetX, oy: offsetY };
     mapCanvas.style.cursor = 'grabbing';
     return;
   }
 
-  if(e.button === 2) { // right-click erase
+  if(spawnMode) {
+    if(e.button === 0) {
+      setSpawnAtEvent(e);
+      return;
+    } else if(e.button === 2) {
+      e.preventDefault();
+      spawnPoint = { x: -1, y: -1 };
+      draw();
+      updateStatus();
+      return;
+    }
+  }
+
+  if(e.button === 2) {
     e.preventDefault();
     isErasing = true;
     paintAtEvent(e, true);
     return;
   }
 
-  // left click paint
   if(e.button === 0) {
     isPainting = true;
     paintAtEvent(e, false);
@@ -263,10 +287,7 @@ mapCanvas.addEventListener('mousemove', e=>{
   drawPreviewAt(e);
 });
 
-mapCanvas.addEventListener('contextmenu', e => { e.preventDefault(); }); // disable context menu
-
-/* Support middle-mouse panning as well */
-mapCanvas.addEventListener('mouseup', ()=> { isPanning=false; });
+mapCanvas.addEventListener('contextmenu', e => { e.preventDefault(); });
 mapCanvas.addEventListener('mouseleave', ()=> { drawPreviewClear(); });
 
 /* ---------- Tileset interaction ---------- */
@@ -282,7 +303,11 @@ tilesetCanvas.addEventListener('click', e=>{
 
 /* redraw tileset with highlight */
 function redrawTileset(){
-  if(!tilesetImage) return;
+  if(!tilesetImage) {
+    tilesetCtx.clearRect(0,0,tilesetCanvas.width,tilesetCanvas.height);
+    tilesetInfo.textContent = 'No tileset loaded';
+    return;
+  }
   tilesetCanvas.width = tilesetImage.width;
   tilesetCanvas.height = tilesetImage.height;
   tilesetCtx.clearRect(0,0,tilesetCanvas.width,tilesetCanvas.height);
@@ -313,21 +338,44 @@ function drawTileset(){
   }
 }
 
-/* handle file upload */
+/* handle file upload - revoke previous object URLs to prevent leaks */
 function handleTilesetUpload(e){
   const file = e.target.files[0];
   if(!file) return;
+
+  // revoke previous object URL if any
+  if(currentTilesetObjectURL) {
+    try { URL.revokeObjectURL(currentTilesetObjectURL); } catch(_) {}
+    currentTilesetObjectURL = null;
+  }
+
   const img = new Image();
+  const url = URL.createObjectURL(file);
+  currentTilesetObjectURL = url;
   img.onload = () => {
+    // once the image data is loaded into memory, we can revoke the blob URL
+    try { URL.revokeObjectURL(url); } catch(_) {}
+    currentTilesetObjectURL = null;
+
+    // detach any previous image reference so it can GC
+    if(tilesetImage && tilesetImage.__onload) {
+      tilesetImage.__onload = null;
+    }
     tilesetImage = img;
+    tilesetImage.__onload = true; // small marker
+
     tileSize = Math.max(4, parseInt(tileSizeInput.value,10) || 16);
-    // If image width isn't divisible by tileSize, we still proceed
     tilesetCanvas.width = img.width;
     tilesetCanvas.height = img.height;
     drawTileset();
     draw();
   };
-  img.src = URL.createObjectURL(file);
+  img.onerror = () => {
+    alert('Failed to load image');
+    try { URL.revokeObjectURL(url); } catch(_) {}
+    currentTilesetObjectURL = null;
+  };
+  img.src = url;
 }
 
 /* ---------- Map Data / Layers ---------- */
@@ -336,7 +384,7 @@ function createEmptyLayer(name){
   for(let y=0;y<mapHeight;y++){
     const row = [];
     for(let x=0;x<mapWidth;x++){
-      row.push({ id: -1, x: x*tileSize, y: y*tileSize });
+      row.push({ tx: -1, ty: -1 });
     }
     arr.push(row);
   }
@@ -345,21 +393,20 @@ function createEmptyLayer(name){
 
 function createMap(w,h){
   mapWidth = w; mapHeight = h;
-  // resize existing layers or create one if none
   if(layers.length === 0) {
     layers.push(createEmptyLayer('Ground'));
     activeLayer = 0;
   } else {
     for(const L of layers){
-      // resize each layer to new size (top-left preserve)
       const newTiles = [];
       for(let y=0;y<mapHeight;y++){
         const row = [];
         for(let x=0;x<mapWidth;x++){
-          if(L.tiles[y] && L.tiles[y][x]){
-            row.push({ id: L.tiles[y][x].id, x: x*tileSize, y: y*tileSize });
+          if(L.tiles[y] && L.tiles[y][x]) {
+            const c = L.tiles[y][x];
+            row.push({ tx: (c.tx ?? -1), ty: (c.ty ?? -1) });
           } else {
-            row.push({ id: -1, x: x*tileSize, y: y*tileSize });
+            row.push({ tx: -1, ty: -1 });
           }
         }
         newTiles.push(row);
@@ -367,10 +414,17 @@ function createMap(w,h){
       L.tiles = newTiles;
     }
   }
-  // (re)set canvas pixel size for preview layers
+  // Reset spawn if out of bounds
+  if (spawnPoint.x >= mapWidth || spawnPoint.y >= mapHeight) {
+    spawnPoint = { x: -1, y: -1 };
+  }
   resizeCanvases();
   refreshLayersUI();
   draw();
+}
+
+function rebuildTileWorldCoords() {
+  // kept for backwards compatibility with earlier code paths that stored x/y; here we don't store world x/y
 }
 
 /* Layer management */
@@ -404,31 +458,47 @@ function moveLayer(dir){
 }
 
 function refreshLayersUI(){
+  // clear and re-create items
   layersList.innerHTML = '';
   for(let i=layers.length-1;i>=0;i--){ // show top first
     const L = layers[i];
     const item = document.createElement('div');
-    item.className = 'layerItem' + (i===activeLayer ? ' active' : '');
+    item.className = 'flex items-center gap-2 p-2 rounded bg-slate-800';
     item.dataset.idx = i;
-    item.innerHTML = `
-      <input type="checkbox" ${L.visible ? 'checked' : ''} title="visible">
-      <input type="text" value="${L.name}">
-      <div style="margin-left:auto; display:flex; gap:6px; align-items:center;">
-        <button class="btn smallBtn" data-action="eye">👁️</button>
-      </div>
-    `;
-    // checkbox toggles visibility
-    const cb = item.querySelector('input[type=checkbox]');
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!L.visible;
+    cb.title = 'visible';
     cb.addEventListener('change', ()=> {
       L.visible = cb.checked;
       draw();
     });
 
-    // rename
-    const nameInput = item.querySelector('input[type=text]');
-    nameInput.addEventListener('change', ()=> {
-      L.name = nameInput.value;
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = L.name;
+    nameInput.className = 'bg-transparent border-0 text-sm text-slate-100 w-full';
+    nameInput.addEventListener('change', ()=> { L.name = nameInput.value; });
+
+    const eyeBtn = document.createElement('button');
+    eyeBtn.className = 'ml-2 text-sm';
+    eyeBtn.title = 'Select layer';
+    eyeBtn.innerHTML = '👁️';
+    eyeBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      L.visible = !L.visible;
+      cb.checked = L.visible;
+      draw();
     });
+
+    item.appendChild(cb);
+    item.appendChild(nameInput);
+    item.appendChild(eyeBtn);
+
+    if(i === activeLayer) {
+      item.classList.add('ring', 'ring-amber-400', 'ring-opacity-20');
+    }
 
     item.addEventListener('click', ()=> {
       activeLayer = i;
@@ -473,69 +543,89 @@ function applyBrushAt(tileX, tileY, tileCoord){
       const y = tileY + by - half;
       if(x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) continue;
       if(tileCoord) {
-        layers[activeLayer].tiles[y][x] = { tx: tileCoord.tx, ty: tileCoord.ty, x:x*tileSize, y:y*tileSize };
+        layers[activeLayer].tiles[y][x] = { tx: tileCoord.tx, ty: tileCoord.ty };
       } else {
-        layers[activeLayer].tiles[y][x] = { tx:-1, ty:-1, x:x*tileSize, y:y*tileSize };
+        layers[activeLayer].tiles[y][x] = { tx:-1, ty:-1 };
       }
     }
   }
 }
 
+// New: Set spawn point at mouse event
+function setSpawnAtEvent(e) {
+  const rect = mapCanvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const worldX = (sx - offsetX) / scale;
+  const worldY = (sy - offsetY) / scale;
+  const tx = Math.floor(worldX / tileSize);
+  const ty = Math.floor(worldY / tileSize);
+  if (tx >= 0 && ty >= 0 && tx < mapWidth && ty < mapHeight) {
+    spawnPoint = { x: tx, y: ty };
+    draw();
+    updateStatus();
+  }
+}
+
 /* ---------- Draw map ---------- */
 function resizeCanvases(){
-  // keep preview canvas same size as mapCanvas
-  // set map canvas to container size
   const wrap = document.getElementById('canvasWrap');
-  mapCanvas.width = wrap.clientWidth - 0;
-  mapCanvas.height = wrap.clientHeight - 0;
+  // make map canvas match container pixel size for crisp rendering
+  mapCanvas.width = Math.max(200, Math.floor(wrap.clientWidth));
+  mapCanvas.height = Math.max(200, Math.floor(wrap.clientHeight));
   previewCanvas.width = mapCanvas.width;
   previewCanvas.height = mapCanvas.height;
 }
 window.addEventListener('resize', ()=> { resizeCanvases(); draw(); });
-resizeCanvases();
+
+let globalResizeObserver = null;
+(function attachObserverOnce(){
+  const wrap = document.getElementById('canvasWrap');
+  if(!globalResizeObserver) {
+    globalResizeObserver = new ResizeObserver(() => { resizeCanvases(); draw(); });
+    globalResizeObserver.observe(wrap);
+  }
+})();
 
 function clearActiveLayer(){
   if(!layers[activeLayer]) return;
   for(let y=0;y<mapHeight;y++){
     for(let x=0;x<mapWidth;x++){
-      layers[activeLayer].tiles[y][x] = { tx:-1, ty:-1, x:x*tileSize, y:y*tileSize };
+      layers[activeLayer].tiles[y][x] = { tx:-1, ty:-1 };
     }
   }
   draw();
-} 
+}
 
 function draw(){
-  // clear canvas
+  // clear & set transform
   mapCtx.setTransform(1,0,0,1,0,0);
   mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height);
-  // apply transform
   mapCtx.setTransform(scale,0,0,scale,offsetX,offsetY);
 
-  // draw background checker
-  const checker = 8;
-  mapCtx.fillStyle = '#080808';
+  // background
+  mapCtx.fillStyle = '#070707';
   mapCtx.fillRect(0,0,mapWidth*tileSize, mapHeight*tileSize);
 
   // draw layers bottom->top
   for(let li=0; li<layers.length; li++){
     const L = layers[li];
     if(!L.visible) continue;
-    // optionally skip layer preview? layerPreview toggles full visibility but we'll draw all if true
+    if(!tilesetImage) continue; // none to draw
+    const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
     for(let y=0;y<mapHeight;y++){
       for(let x=0;x<mapWidth;x++){
         const cell = L.tiles[y][x];
-        if(cell.tx >= 0 && tilesetImage){
-            const sx = cell.tx * tileSize;
-            const sy = cell.ty * tileSize;
-            try {
-                mapCtx.drawImage(tilesetImage, sx, sy, tileSize, tileSize, cell.x, cell.y, tileSize, tileSize);
-            } catch(err) {}
-            }
+        if(cell.tx >= 0) {
+          const sx = cell.tx * tileSize;
+          const sy = cell.ty * tileSize;
+          mapCtx.drawImage(tilesetImage, sx, sy, tileSize, tileSize, x*tileSize, y*tileSize, tileSize, tileSize);
+        }
       }
     }
   }
 
-  // draw grid (in world coords)
+  // grid
   if(showGrid){
     mapCtx.strokeStyle = 'rgba(255,255,255,0.06)';
     mapCtx.lineWidth = 1/scale;
@@ -553,15 +643,29 @@ function draw(){
     }
   }
 
-  // draw an outline of the map bounds
+  // border
   mapCtx.lineWidth = 2/scale;
   mapCtx.strokeStyle = 'rgba(255,255,255,0.08)';
   mapCtx.strokeRect(0,0,mapWidth*tileSize,mapHeight*tileSize);
 
-  // draw active layer highlight overlay (light tint)
+  // active layer tint overlay
   if(layers[activeLayer] && layerPreview) {
     mapCtx.fillStyle = 'rgba(50,160,255,0.03)';
     mapCtx.fillRect(0,0,mapWidth*tileSize, mapHeight*tileSize);
+  }
+
+  // New: Draw spawn point marker
+  if (spawnPoint.x >= 0 && spawnPoint.y >= 0) {
+    mapCtx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+    mapCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    mapCtx.lineWidth = 2 / scale;
+    const centerX = (spawnPoint.x + 0.5) * tileSize;
+    const centerY = (spawnPoint.y + 0.5) * tileSize;
+    const radius = tileSize / 3;
+    mapCtx.beginPath();
+    mapCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    mapCtx.fill();
+    mapCtx.stroke();
   }
 
   // reset transform for preview overlays
@@ -581,9 +685,6 @@ function drawPreviewAt(e){
   const tx = Math.floor(worldX / tileSize);
   const ty = Math.floor(worldY / tileSize);
 
-  const brush = parseInt(document.getElementById('brushSize').value,10) || 1;
-  const half = Math.floor((brush-1)/2);
-
   if(tx < -10 || ty < -10 || tx > mapWidth+10 || ty > mapHeight+10) return;
 
   previewCtx.save();
@@ -591,54 +692,70 @@ function drawPreviewAt(e){
   previewCtx.translate(offsetX, offsetY);
   previewCtx.scale(scale, scale);
 
-  // brush preview
-  previewCtx.fillStyle = 'rgba(255,255,255,0.06)';
-  previewCtx.strokeStyle = 'rgba(255,255,255,0.22)';
-  previewCtx.lineWidth = 2/scale;
+  if (spawnMode) {
+    // Preview for spawn mode: single tile highlight with marker
+    previewCtx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+    previewCtx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    previewCtx.lineWidth = 2 / scale;
+    previewCtx.fillRect(tx * tileSize, ty * tileSize, tileSize, tileSize);
+    previewCtx.strokeRect(tx * tileSize, ty * tileSize, tileSize, tileSize);
 
-  for(let by=0; by<brush; by++){
-    for(let bx=0; bx<brush; bx++){
-      const x = tx + bx - half;
-      const y = ty + by - half;
-      if(x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) continue;
-      previewCtx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
-      previewCtx.strokeRect(x*tileSize, y*tileSize, tileSize, tileSize);
+    const centerX = (tx + 0.5) * tileSize;
+    const centerY = (ty + 0.5) * tileSize;
+    const radius = tileSize / 3;
+    previewCtx.beginPath();
+    previewCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    previewCtx.stroke();
+  } else {
+    const brush = parseInt(document.getElementById('brushSize').value,10) || 1;
+    const half = Math.floor((brush-1)/2);
+
+    previewCtx.fillStyle = 'rgba(255,255,255,0.06)';
+    previewCtx.strokeStyle = 'rgba(255,255,255,0.22)';
+    previewCtx.lineWidth = 2/scale;
+
+    for(let by=0; by<brush; by++){
+      for(let bx=0; bx<brush; bx++){
+        const x = tx + bx - half;
+        const y = ty + by - half;
+        if(x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) continue;
+        previewCtx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
+        previewCtx.strokeRect(x*tileSize, y*tileSize, tileSize, tileSize);
+      }
+    }
+
+    if(selectedTile >= 0 && tilesetImage){
+      const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
+      const sxTile = (selectedTile % across) * tileSize;
+      const syTile = Math.floor(selectedTile / across) * tileSize;
+      previewCtx.globalAlpha = 0.9;
+      previewCtx.drawImage(tilesetImage, sxTile, syTile, tileSize, tileSize,
+                          tx*tileSize, ty*tileSize, tileSize, tileSize);
+      previewCtx.globalAlpha = 1.0;
     }
   }
-
-  // tile preview (draw selected tile texture small opacity)
-  if(selectedTile >= 0 && tilesetImage){
-    const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
-    const sxTile = selectedTile % across * tileSize;
-    const syTile = Math.floor(selectedTile / across) * tileSize;
-    previewCtx.globalAlpha = 0.9;
-    previewCtx.drawImage(tilesetImage, sxTile, syTile, tileSize, tileSize,
-                        tx*tileSize, ty*tileSize, tileSize, tileSize);
-    previewCtx.globalAlpha = 1.0;
-    }
   previewCtx.restore();
 }
 
 function drawPreviewClear(){
-  // preview is drawn to separate canvas, but we clear it on draw()
-  // don't clear here since draw() will call it; however we keep a safe clear
-  // previewCtx.clearRect(0,0,previewCanvas.width, previewCanvas.height);
+  // we clear on demand already
+  previewCtx.clearRect(0,0,previewCanvas.width, previewCanvas.height);
 }
 
 /* ---------- Save / Load JSON ---------- */
 function buildExportJSON(){
-  const exportObj = {
+  return {
     name: "MyMap",
     width: mapWidth,
     height: mapHeight,
     tile_size: tileSize,
+    spawn_point: spawnPoint.x >= 0 ? { x: spawnPoint.x, y: spawnPoint.y } : null,
     layers: layers.map(L => ({
       name: L.name,
       visible: !!L.visible,
       tiles: L.tiles.map(row => row.map(cell => ({ tx: cell.tx, ty: cell.ty })))
     }))
   };
-  return exportObj;
 }
 
 function downloadJSON(){
@@ -651,7 +768,7 @@ function downloadJSON(){
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  try { URL.revokeObjectURL(url); } catch(_) {}
 }
 
 function loadJSONFromFile(e){
@@ -673,22 +790,31 @@ function loadJSONFromFile(e){
 function loadFromJSONObj(j){
   tileSize = j.tile_size || tileSize;
   tileSizeInput.value = tileSize;
-  mapWidth = j.width; mapHeight = j.height;
+  mapWidth = j.width || mapWidth; mapHeight = j.height || mapHeight;
+  spawnPoint = j.spawn_point && j.spawn_point.x >= 0 && j.spawn_point.y >= 0 ? { x: j.spawn_point.x, y: j.spawn_point.y } : { x: -1, y: -1 };
   layers = [];
-  for(const L of j.layers){
-    if(L.tiles && Array.isArray(L.tiles) && L.tiles.length === mapHeight) {
-      for(let y=0;y<mapHeight;y++){
-        for(let x=0;x<mapWidth;x++){
-          const c = L.tiles[y][x];
-          if(!c) L.tiles[y][x] = { tx:-1, ty:-1, x:x*tileSize, y:y*tileSize };
-          else L.tiles[y][x] = { tx:c.tx ?? -1, ty:c.ty ?? -1, x:x*tileSize, y:y*tileSize };
+  if(Array.isArray(j.layers) && j.layers.length){
+    for(const L of j.layers){
+      if(L.tiles && Array.isArray(L.tiles) && L.tiles.length === mapHeight) {
+        // normalize tiles to ensure tx/ty exist
+        const normalized = [];
+        for(let y=0;y<mapHeight;y++){
+          const row = [];
+          for(let x=0;x<mapWidth;x++){
+            const c = (L.tiles[y] && L.tiles[y][x]) ? L.tiles[y][x] : { tx:-1, ty:-1 };
+            row.push({ tx: c.tx ?? -1, ty: c.ty ?? -1 });
+          }
+          normalized.push(row);
         }
+        layers.push({ name: L.name || 'Layer', visible: !!L.visible, tiles: normalized });
+      } else {
+        layers.push(createEmptyLayer(L.name || 'Layer'));
       }
-      layers.push({ name: L.name || 'Layer', visible: !!L.visible, tiles: L.tiles });
-    } else {
-      layers.push(createEmptyLayer(L.name || 'Layer'));
     }
+  } else {
+    layers.push(createEmptyLayer('Layer 0'));
   }
+
   activeLayer = Math.max(0, layers.length-1);
   document.getElementById('mapWidth').value = mapWidth;
   document.getElementById('mapHeight').value = mapHeight;
@@ -699,24 +825,19 @@ function loadFromJSONObj(j){
 
 /* ---------- Utilities ---------- */
 function updateStatus(){
-  statusEl.textContent = `Selected tile: ${selectedTile} | Layer: ${layers[activeLayer] ? layers[activeLayer].name : '-'} (${activeLayer}) | Scale: ${Math.round(scale*100)}%`;
+  const spawnText = spawnPoint.x >= 0 ? `${spawnPoint.x},${spawnPoint.y}` : 'none';
+  statusEl.textContent = `Selected tile: ${selectedTile} | Layer: ${layers[activeLayer] ? layers[activeLayer].name : '-'} (${activeLayer}) | Scale: ${Math.round(scale*100)}% | Spawn: ${spawnText}`;
 }
 
 /* ---------- Init defaults ---------- */
 (function init(){
-  // create default map and layer
   createMap(mapWidth, mapHeight);
   if(!layers.length) layers.push(createEmptyLayer('Ground'));
   activeLayer = 0;
   refreshLayersUI();
   draw();
-
-  // make canvases resize with container
-  const wrap = document.getElementById('canvasWrap');
-  const observer = new ResizeObserver(() => { resizeCanvases(); draw(); });
-  observer.observe(wrap);
+  resizeCanvases();
 })();
-
 </script>
 </body>
 </html>
