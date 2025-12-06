@@ -427,7 +427,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_h7ic4")
 }],
-"loop": false,
+"loop": true,
 "name": &"ledge_climb",
 "speed": 10.0
 }, {
@@ -482,10 +482,8 @@ script = ExtResource("1_g2els")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -16)
 sprite_frames = SubResource("SpriteFrames_3v2ag")
-animation = &"run"
+animation = &"ledge_climb"
 autoplay = "idle"
-frame = 3
-frame_progress = 0.34165946
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -13)
@@ -516,11 +514,11 @@ script = ExtResource("13_jej6c")
 script = ExtResource("15_oprun")
 
 [node name="ledge_grab_top" type="RayCast2D" parent="."]
-position = Vector2(0, -24)
-target_position = Vector2(20, -20)
+position = Vector2(0, -27)
+target_position = Vector2(12, -24)
 hit_from_inside = true
 
 [node name="ledge_grab_wall" type="RayCast2D" parent="."]
-position = Vector2(0, -19)
-target_position = Vector2(20, -4)
+position = Vector2(0, -16)
+target_position = Vector2(20, -8)
 hit_from_inside = true

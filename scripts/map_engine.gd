@@ -34,7 +34,6 @@ var pieces: Array[StagePiece] = [
 ]
 
 func _ready():
-	return
 	randomize()
 	generate_stage()
 	spawn_player()
