@@ -24,3 +24,7 @@ func physics_update(_delta: float) -> void:
 	
 	if player.velocity.y >= 0:
 		finished.emit(FALLING)
+	
+	if !player.is_on_floor() and Input.is_action_just_pressed("jump") and player.can_dash:
+		player.can_dash = false
+		finished.emit(AIR_SPIN)
