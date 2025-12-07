@@ -1,4 +1,4 @@
-[gd_scene load_steps=97 format=3 uid="uid://cny27g58i2o5r"]
+[gd_scene load_steps=99 format=3 uid="uid://cny27g58i2o5r"]
 
 [ext_resource type="Texture2D" uid="uid://b62od7w55yndu" path="res://assets/sprites/Player Movement v1/player idle.png" id="1_3vyb7"]
 [ext_resource type="Script" uid="uid://2yqphclqplct" path="res://scripts/player.gd" id="1_g2els"]
@@ -20,6 +20,8 @@
 [ext_resource type="Script" uid="uid://dgv8vewjcorks" path="res://scripts/states/ledge_hang.gd" id="15_oprun"]
 [ext_resource type="Script" uid="uid://b8cb7xjfmxm8y" path="res://scripts/states/air_spin.gd" id="17_qfm1y"]
 [ext_resource type="Script" uid="uid://bgytgben6escl" path="res://scripts/states/wall_land.gd" id="20_60mlk"]
+[ext_resource type="Script" uid="uid://buny76cbnflcc" path="res://scripts/states/wall_slide.gd" id="20_i4ail"]
+[ext_resource type="Script" uid="uid://b86qbb7t8ea38" path="res://scripts/states/landing.gd" id="22_a38lo"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_au7lq"]
 atlas = ExtResource("2_a8ls1")
@@ -503,7 +505,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"land",
-"speed": 10.0
+"speed": 15.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -580,7 +582,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"wall_land",
-"speed": 10.0
+"speed": 20.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -607,8 +609,10 @@ script = ExtResource("1_g2els")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -16)
 sprite_frames = SubResource("SpriteFrames_3v2ag")
-animation = &"ledge_hang"
+animation = &"land"
 autoplay = "idle"
+frame = 8
+frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -13)
@@ -642,9 +646,13 @@ script = ExtResource("15_oprun")
 script = ExtResource("17_qfm1y")
 
 [node name="Wall_Slide" type="Node" parent="StateMachine"]
+script = ExtResource("20_i4ail")
 
 [node name="Wall_Land" type="Node" parent="StateMachine"]
 script = ExtResource("20_60mlk")
+
+[node name="Landing" type="Node" parent="StateMachine"]
+script = ExtResource("22_a38lo")
 
 [node name="ledge_grab_top" type="RayCast2D" parent="."]
 position = Vector2(0, -33)

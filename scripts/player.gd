@@ -8,7 +8,7 @@ class_name Player extends CharacterBody2D
 @export var on_ledge: bool = false
 @export var direction: float = 0.0
 var can_dash: bool = true
-var can_wall_kick: bool = true 
+var can_wall_kick: bool = false
 const TILE_SIZE: Vector2 = Vector2(16, 16)
 const TILE_TOP_LEFT = Vector2(0, 0)
 const TILE_TOP_RIGHT = Vector2(1, 0)

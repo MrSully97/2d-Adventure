@@ -10,7 +10,6 @@ var has_started := false
 func enter(previous_state_path: String, data := {}) -> void:
 	Input.start_joy_vibration(0, 0.5, 0.5, 0.1)
 	var dash_dir = -1.0 if player.animation_player.flip_h else 1.0
-	player.direction = dash_dir
 	player.velocity.x = dash_dir * dash_speed
 	
 	player.velocity.y = -wall_dash_impulse if player.can_wall_kick == true else -dash_down_impulse
