@@ -46,3 +46,6 @@ func physics_update(_delta: float) -> void:
 	if Input.is_action_pressed("move_up"):
 		finished.emit(LEDGE_CLIMBING)
 		return
+	elif Input.is_action_just_pressed("move_down"):
+		player.animation_player.flip_h = !player.animation_player.flip_h
+		finished.emit(WALL_SLIDE)
