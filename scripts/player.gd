@@ -18,13 +18,16 @@ const TILE_TOP_RIGHT = Vector2(1, 0)
 
 @onready var ledge_grab_top: RayCast2D = $ledge_grab_top
 @onready var ledge_grab_wall: RayCast2D = $ledge_grab_wall
+@onready var ledge_grab_bottom: RayCast2D = $ledge_grab_bottom
 
 func _update_ledge_raycasts() -> void:
 	var dir = -1 if animation_player.flip_h else 1
-	ledge_grab_top.target_position = Vector2(dir * 18, -20)
-	ledge_grab_wall.target_position = Vector2(dir * 16, -8)
+	ledge_grab_top.target_position = Vector2(dir * 18, -2)
+	ledge_grab_wall.target_position = Vector2(dir * 16, 0)
+	ledge_grab_bottom.target_position = Vector2(dir * 20, 0 )
 	ledge_grab_top.force_raycast_update()
 	ledge_grab_wall.force_raycast_update()
+	ledge_grab_bottom.force_raycast_update()
 
 func can_grab_ledge() -> bool:
 	_update_ledge_raycasts()
@@ -48,5 +51,7 @@ func can_grab_wall() -> bool:
 	# Wall ray must not hit anything (there's a grabbable edge)
 	if not ledge_grab_wall.is_colliding():
 		return false
-	print("Can Wall Land")
+	
+	if not ledge_grab_bottom.is_colliding():
+		return false
 	return true

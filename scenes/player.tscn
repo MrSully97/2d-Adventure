@@ -607,7 +607,7 @@ script = ExtResource("1_g2els")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -16)
 sprite_frames = SubResource("SpriteFrames_3v2ag")
-animation = &"wall_land"
+animation = &"ledge_hang"
 autoplay = "idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -647,11 +647,16 @@ script = ExtResource("17_qfm1y")
 script = ExtResource("20_60mlk")
 
 [node name="ledge_grab_top" type="RayCast2D" parent="."]
-position = Vector2(0, -24)
-target_position = Vector2(20, -20)
+position = Vector2(0, -33)
+target_position = Vector2(18, -2)
 hit_from_inside = true
 
 [node name="ledge_grab_wall" type="RayCast2D" parent="."]
 position = Vector2(0, -19)
-target_position = Vector2(20, -4)
+target_position = Vector2(16, 0)
+hit_from_inside = true
+
+[node name="ledge_grab_bottom" type="RayCast2D" parent="."]
+position = Vector2(0, -1)
+target_position = Vector2(20, 0)
 hit_from_inside = true
