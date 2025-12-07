@@ -1,4 +1,4 @@
-[gd_scene load_steps=99 format=3 uid="uid://cny27g58i2o5r"]
+[gd_scene load_steps=111 format=3 uid="uid://cny27g58i2o5r"]
 
 [ext_resource type="Texture2D" uid="uid://b62od7w55yndu" path="res://assets/sprites/Player Movement v1/player idle.png" id="1_3vyb7"]
 [ext_resource type="Script" uid="uid://2yqphclqplct" path="res://scripts/player.gd" id="1_g2els"]
@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://djjs14si2p5fn" path="res://assets/sprites/Player Movement v2/Player Crouch-Idle.png" id="2_tuyoq"]
 [ext_resource type="Texture2D" uid="uid://dou32dcsomqx4" path="res://assets/sprites/Player Movement v1/player run.png" id="3_qhqgy"]
 [ext_resource type="Texture2D" uid="uid://c7jpqsfpywq0v" path="res://assets/sprites/Player Movement v1/player jump.png" id="3_qlg0r"]
+[ext_resource type="Texture2D" uid="uid://d21fq3ntuhklv" path="res://assets/sprites/Player Movement v2/player crouch-walk.png" id="4_4ni07"]
 [ext_resource type="Texture2D" uid="uid://clt5dio0ddjvd" path="res://assets/sprites/Player Movement v1/player land.png" id="4_tuyoq"]
 [ext_resource type="Texture2D" uid="uid://imvqf43ddx1k" path="res://assets/sprites/Player Movement v2/player ledge climb.png" id="6_f1ej7"]
 [ext_resource type="Script" uid="uid://do6ghhuo2p0rb" path="res://scripts/state_machine.gd" id="7_fjrip"]
@@ -22,6 +23,7 @@
 [ext_resource type="Script" uid="uid://bgytgben6escl" path="res://scripts/states/wall_land.gd" id="20_60mlk"]
 [ext_resource type="Script" uid="uid://buny76cbnflcc" path="res://scripts/states/wall_slide.gd" id="20_i4ail"]
 [ext_resource type="Script" uid="uid://b86qbb7t8ea38" path="res://scripts/states/landing.gd" id="22_a38lo"]
+[ext_resource type="Script" uid="uid://bf07vgcuopsxp" path="res://scripts/states/crouch_walking.gd" id="24_l71n6"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_au7lq"]
 atlas = ExtResource("2_a8ls1")
@@ -125,6 +127,46 @@ region = Rect2(384, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ha2mi"]
 atlas = ExtResource("2_tuyoq")
+region = Rect2(432, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0yhus"]
+atlas = ExtResource("4_4ni07")
+region = Rect2(0, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jlll7"]
+atlas = ExtResource("4_4ni07")
+region = Rect2(48, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qk6i7"]
+atlas = ExtResource("4_4ni07")
+region = Rect2(96, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6c3st"]
+atlas = ExtResource("4_4ni07")
+region = Rect2(144, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1da1t"]
+atlas = ExtResource("4_4ni07")
+region = Rect2(192, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_p21yu"]
+atlas = ExtResource("4_4ni07")
+region = Rect2(240, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_irpag"]
+atlas = ExtResource("4_4ni07")
+region = Rect2(288, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bpsgo"]
+atlas = ExtResource("4_4ni07")
+region = Rect2(336, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jx8is"]
+atlas = ExtResource("4_4ni07")
+region = Rect2(384, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vx63k"]
+atlas = ExtResource("4_4ni07")
 region = Rect2(432, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_l71n6"]
@@ -411,6 +453,41 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_0yhus")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jlll7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qk6i7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6c3st")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1da1t")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_p21yu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_irpag")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bpsgo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jx8is")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vx63k")
+}],
+"loop": true,
+"name": &"crouch_walk",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_l71n6")
 }, {
 "duration": 1.0,
@@ -609,10 +686,8 @@ script = ExtResource("1_g2els")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -16)
 sprite_frames = SubResource("SpriteFrames_3v2ag")
-animation = &"land"
+animation = &"crouch_walk"
 autoplay = "idle"
-frame = 8
-frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -13)
@@ -653,6 +728,9 @@ script = ExtResource("20_60mlk")
 
 [node name="Landing" type="Node" parent="StateMachine"]
 script = ExtResource("22_a38lo")
+
+[node name="Crouch_Walk" type="Node" parent="StateMachine"]
+script = ExtResource("24_l71n6")
 
 [node name="ledge_grab_top" type="RayCast2D" parent="."]
 position = Vector2(0, -33)
