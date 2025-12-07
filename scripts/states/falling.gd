@@ -12,7 +12,7 @@ func physics_update(_delta: float) -> void:
 	var dir := -1 if player.animation_player.flip_h else 1
 	var small_boost := (player.SPEED * dir) * 0.3
 	
-	player.velocity.x = small_boost if (player.velocity.x < 5 and player.velocity.x > -5) else player.velocity.x
+	player.velocity.x = small_boost if (player.velocity.x < 5 and player.velocity.x > -5) and not input_direction_x == 0 else player.velocity.x
 	#if player.animation_player.flip_h:
 		#if player.velocity.x > -5:
 			#player.velocity.x = (-player.SPEED * 0.3) * _delta
