@@ -43,6 +43,6 @@ func physics_update(_delta: float) -> void:
 		return
 	
 	# Press UP to climb
-	if Input.is_action_just_pressed("move_up"):
+	if Input.is_action_pressed("move_up"):
 		finished.emit(LEDGE_CLIMBING)
 		return
