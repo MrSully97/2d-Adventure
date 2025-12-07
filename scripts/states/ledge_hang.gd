@@ -6,6 +6,9 @@ extends PlayerState
 var snap_position := Vector2.ZERO
 
 func enter(previous_state_path: String, data := {}) -> void:
+	
+	Input.start_joy_vibration(0, 1, 1, 0.2)
+	
 	# Snap to hanging position
 	var hit_point = player.ledge_grab_wall.get_collision_point()
 	
