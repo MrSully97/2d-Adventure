@@ -8,18 +8,12 @@ func enter(previous_state_path: String, data := {}) -> void:
 	# Start from the tile corner that the hang snapped to
 	var start_corner = player.get_tile_corner_from_point(player.global_position, player.TILE_TOP_LEFT)
 	
-	if player.animation_player.flip_h:
+	if player.sprite.flip_h:
 		start_corner = player.get_tile_corner_from_point(player.global_position, player.TILE_TOP_RIGHT)
 	# Move up one full tile + some offset for sprite feet
 	var climb_target = start_corner + Vector2(0, -player.TILE_SIZE.y)
 	
-	#var climb_up_y := -28
-	#var climb_forward_x := 16
-	
-	# Target position = standing on top of ledge
-	#var climb_target = player.global_position + Vector2(0, climb_up_y) # Tweak for animation
-	
-	if player.animation_player.flip_h:
+	if player.sprite.flip_h:
 		climb_target.x -= player.TILE_SIZE.x
 	else:
 		climb_target.x += player.TILE_SIZE.x

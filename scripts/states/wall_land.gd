@@ -10,7 +10,7 @@ func enter(previous_state_path: String, data := {}) -> void:
 	
 	player.animation_player.play("wall_land")
 	player.velocity.y = 0
-	player.animation_player.flip_h = !player.animation_player.flip_h
+	player.sprite.flip_h = !player.sprite.flip_h
 	
 	wall_timer = get_tree().create_timer(0.5, false)
 	wall_timer.timeout.connect(_on_wall_timer_timeout)
