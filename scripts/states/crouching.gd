@@ -8,14 +8,17 @@ func physics_update(_delta: float) -> void:
 	player.velocity.y += player.gravity * _delta
 	player.move_and_slide()
 	
-	if not player.is_on_floor():
-		finished.emit(FALLING)
-	elif player.is_on_floor() and Input.is_action_pressed("crouch") and Input.is_action_pressed("move_left") or Input.is_action_pressed("move_right"):
+	if not player.stuck_crouch():
+		if not player.is_on_floor():
+			finished.emit(FALLING)
+		elif player.is_on_floor() and Input.is_action_pressed("crouch") and Input.is_action_pressed("move_left") or Input.is_action_pressed("move_right"):
+			finished.emit(CROUCH_WALKING)
+		elif Input.is_action_just_pressed("jump"):
+			finished.emit(JUMPING)
+		elif Input.is_action_just_released("crouch"):
+			if Input.is_action_pressed("move_left") or Input.is_action_pressed("move_right"):
+				finished.emit(RUNNING)
+			else:
+				finished.emit(IDLE)
+	elif player.stuck_crouch() and (Input.is_action_pressed("move_left") or Input.is_action_pressed("move_right")):
 		finished.emit(CROUCH_WALKING)
-	elif Input.is_action_just_pressed("jump"):
-		finished.emit(JUMPING)
-	elif Input.is_action_just_released("crouch"):
-		if Input.is_action_pressed("move_left") or Input.is_action_pressed("move_right"):
-			finished.emit(RUNNING)
-		else:
-			finished.emit(IDLE)

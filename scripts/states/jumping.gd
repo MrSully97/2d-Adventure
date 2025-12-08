@@ -13,9 +13,9 @@ func enter(previous_state_path: String, data := {}) -> void:
 func physics_update(_delta: float) -> void:
 	var input_direction_x := Input.get_axis("move_left", "move_right")
 	if input_direction_x > 0:
-		player.animation_player.flip_h = false
+		player.sprite.flip_h = false
 	elif input_direction_x < 0:
-		player.animation_player.flip_h = true
+		player.sprite.flip_h = true
 	# Allows air movement from idle animation to allow better directional jumps from standing
 	if allow_air_movement == true:
 		player.velocity.x = (player.SPEED / 1.5) * input_direction_x

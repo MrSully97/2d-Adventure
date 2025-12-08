@@ -5,6 +5,5 @@ func enter(previous_state_path: String, data := {}) -> void:
 	player.animation_player.play("land")
 	player.velocity = Vector2.ZERO
 
-func physics_update(_delta: float) -> void:
-	if not player.animation_player.is_playing():
-		finished.emit(IDLE)
+func on_animation_finished() -> void:
+	finished.emit(IDLE)
