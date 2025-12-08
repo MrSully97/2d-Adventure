@@ -9,8 +9,10 @@ func enter(previous_state_path: String, data := {}) -> void:
 	Input.start_joy_vibration(0, 0.5, 0.5, 0.1)
 	
 	var dash_dir = -1.0 if player.sprite.flip_h else 1.0
-	player.velocity.x = dash_dir * dash_speed
+	player.velocity.x = (dash_dir*(dash_speed/1.5)) if player.can_wall_kick else (dash_dir * dash_speed)
 	player.velocity.y = -wall_dash_impulse if player.can_wall_kick == true else -dash_down_impulse
+	
+	player.animation_player.speed_scale = 1.5 if player.can_wall_kick else 1
 	
 	player.can_wall_kick = false
 	
@@ -32,3 +34,6 @@ func physics_update(_delta: float) -> void:
 
 func on_animation_finished() -> void:
 	finished.emit(FALLING)
+
+func exit() -> void:
+	player.animation_player.speed_scale = 1
