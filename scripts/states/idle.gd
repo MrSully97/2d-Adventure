@@ -19,3 +19,5 @@ func physics_update(_delta: float) -> void:
 		finished.emit(JUMPING)
 	elif not is_equal_approx(input_direction_x, 0.0):
 		finished.emit(RUNNING)
+	elif player.is_on_floor() and Input.is_action_just_pressed("roll"):
+		finished.emit(ROLLING)
