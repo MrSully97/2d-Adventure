@@ -7,9 +7,9 @@ func physics_update(_delta: float) -> void:
 	var input_direction_x := Input.get_axis("move_left", "move_right")
 	
 	if input_direction_x != 0:
-		player.animation_player.flip_h = input_direction_x < 0
+		player.sprite.flip_h = input_direction_x < 0
 	
-	var dir := -1 if player.animation_player.flip_h else 1
+	var dir := -1 if player.sprite.flip_h else 1
 	var small_boost := (player.SPEED * dir) * 0.3
 	
 	player.velocity.x = small_boost if (player.velocity.x < 5 and player.velocity.x > -5) and not input_direction_x == 0 else player.velocity.x

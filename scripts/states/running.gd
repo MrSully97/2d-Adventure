@@ -15,9 +15,9 @@ func physics_update(_delta: float) -> void:
 	var input_direction_x := Input.get_axis("move_left", "move_right")
 	
 	if input_direction_x > 0:
-		player.animation_player.flip_h = false
+		player.sprite.flip_h = false
 	elif input_direction_x < 0:
-		player.animation_player.flip_h = true
+		player.sprite.flip_h = true
 	
 	player.velocity.x = player.SPEED * input_direction_x
 	changeAnimationSpeed(player.velocity.x)
@@ -25,6 +25,8 @@ func physics_update(_delta: float) -> void:
 	player.velocity.y += player.gravity * _delta
 	player.move_and_slide()
 
+	if player.stuck_crouch():
+		finished.emit(CROUCHING)
 	if not player.is_on_floor():
 		player.animation_player.speed_scale = 1.0
 		finished.emit(FALLING)
