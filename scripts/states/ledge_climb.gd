@@ -36,7 +36,9 @@ func enter(previous_state_path: String, data := {}) -> void:
 	
 func _climb_complete() -> void:
 	# Now on ground
-	if Input.get_axis("move_left", "move_right") == 0:
+	if player.stuck_crouch():
+		finished.emit(CROUCHING) 
+	elif Input.get_axis("move_left", "move_right") == 0:
 		finished.emit(IDLE)
 	else:
 		finished.emit(RUNNING)
