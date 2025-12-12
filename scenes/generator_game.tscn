@@ -1,0 +1,34 @@
+[gd_scene load_steps=5 format=3 uid="uid://br0hn3e12r3h3"]
+
+[ext_resource type="Script" uid="uid://bpwlmkxmb5qiu" path="res://scripts/map_engine.gd" id="2_6rssb"]
+[ext_resource type="PackedScene" uid="uid://86hbjsdffw5p" path="res://scenes/pause_menu.tscn" id="4_2u767"]
+[ext_resource type="TileSet" uid="uid://dutllmhwejlyg" path="res://mid_tileset.tres" id="4_lwx2p"]
+[ext_resource type="PackedScene" uid="uid://cny27g58i2o5r" path="res://scenes/player.tscn" id="5_8jxra"]
+
+[node name="Game" type="Node2D"]
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = ExtResource("4_lwx2p")
+format = 2
+layer_0/name = "Background"
+layer_1/name = "Mid"
+layer_1/z_index = 1
+script = ExtResource("2_6rssb")
+player_path = NodePath("../Player")
+use_json_map = false
+
+[node name="Player" parent="." instance=ExtResource("5_8jxra")]
+z_index = 1
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+position = Vector2(0, -11)
+zoom = Vector2(2, 2)
+position_smoothing_enabled = true
+position_smoothing_speed = 3.0
+rotation_smoothing_enabled = true
+rotation_smoothing_speed = 3.0
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="PauseMenu" parent="CanvasLayer" instance=ExtResource("4_2u767")]
+metadata/_edit_use_anchors_ = true

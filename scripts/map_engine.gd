@@ -42,11 +42,17 @@ func _ready():
 		generate_stage()
 		spawn_player()
 
+# Respawns player at start if they fall
+func _physics_process(delta: float) -> void:
+	if not use_json_map:
+		if get_node(player_path).global_position.y > 500:
+			get_node(player_path).velocity = Vector2(0, 0)
+			get_node(player_path).global_position = Vector2(-1, -100)
+
 # ------------------------------------
 # PLACE TILES
 # ------------------------------------
 func place_ground_column(x: int, y_top: int, atlas: Vector2i):
-	print(get_layer_name(1))
 	# Place ground normally
 	for y in range(y_top, map_height):
 		set_cell(mid_layer, Vector2i(x, y), tileset_source_id, atlas, 0)
@@ -171,8 +177,6 @@ func generate_stage():
 	var tile_size := tile_set.tile_size # TileMap tile size
 	var visible_tiles_x = int(ceil(viewport.size.x / tile_size.x)) + 2
 	var visible_tiles_y = int(ceil(viewport.size.y / tile_size.y)) + 2
-	print(visible_tiles_x)
-	print(visible_tiles_y)
 	# Draw background for entire visible area
 	# Draw background first
 	for w in range(map_width + visible_tiles_x):
