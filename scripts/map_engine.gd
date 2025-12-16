@@ -1,6 +1,13 @@
 extends TileMap
 
 # ------------------------------------
+# Global Variable
+# ------------------------------------
+
+@onready var main_menu_map_options = get_node("/root/GlobalSingleton")
+
+
+# ------------------------------------
 # GENERATION SETTINGS
 # ------------------------------------
 @export var map_width: int = 500
@@ -35,11 +42,16 @@ var pieces: Array[StagePiece] = [
 @export var json_map_path := "res://maps/map_1.json"
 
 func _ready():
+	if main_menu_map_options.getMap() != null:
+		use_json_map = true
+		json_map_path = main_menu_map_options.getMap()
+	
 	if use_json_map:
 		load_map_from_json(json_map_path)
 		spawn_player()
 	else:
 		generate_stage()
+		save_map_to_json("res://maps/temp_maps/generated_map_%s.json" % str(randi_range(1, 10000)))
 		spawn_player()
 
 # Respawns player at start if they fall
@@ -191,6 +203,7 @@ func generate_stage():
 		var piece: StagePiece = pieces.pick_random()
 		var consumed = piece.generate(self, x, y_ground)
 		x += consumed
+	print("list check", platform_list)
 	print("Mario-style world generated!")
 
 # ------------------------------------
@@ -205,6 +218,9 @@ func get_random_platform() -> Dictionary:
 func get_spawn_tile(platform: Dictionary) -> Vector2i:
 	return Vector2i(0, map_height - 6) # Spawn at **very left side** of map
 
+# ------------------------------------
+# GENERATED MAP SAVER
+# ------------------------------------
 func spawn_player():
 	if not player_path:
 		push_warning("Player path not set.")
@@ -224,3 +240,50 @@ func spawn_player():
 	var world_pos = map_to_local(spawn_tile)
 	player.global_position = world_pos
 	print("Player spawned at ", world_pos)
+
+func save_map_to_json(path: String) -> void:
+	var map_data: Dictionary = {
+		"width": map_width,
+		"height": map_height,
+		"spawn_point": {"x": spawn_point.x, "y": spawn_point.y},
+		"layers": []
+	}
+
+	var layer_count := get_layers_count()
+
+	for layer_index in range(layer_count):
+		var layer_dict: Dictionary = {
+			"layer": layer_index,
+			"tiles": []  # list of {x,y,tx,ty}
+		}
+
+		# Iterate through used cells ONLY (much faster than scanning entire map)
+		var used := get_used_cells(layer_index)
+		for cell in used:
+			var tile_data := get_cell_atlas_coords(layer_index, cell)
+			if tile_data == null:
+				continue
+
+			# Convert to dictionary readable by your load function
+			layer_dict.tiles.append({
+				"x": cell.x,
+				"y": cell.y,
+				"tx": tile_data.x,
+				"ty": tile_data.y,
+			})
+		
+		map_data.layers.append(layer_dict)
+
+	# Convert to JSON
+	var json := JSON.stringify(map_data, "\t")  # pretty formatting
+
+	# Save file
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		push_error("Failed to save JSON map to: " + path)
+		return
+
+	file.store_string(json)
+	file.close()
+
+	print("Map saved to: ", path)

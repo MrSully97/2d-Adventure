@@ -15,6 +15,10 @@ run/main_scene="uid://dntc1afii58om"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+GlobalSingleton="*res://scripts/global_singleton.gd"
+
 [input]
 
 ui_accept={
