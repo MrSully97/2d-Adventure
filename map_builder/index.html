@@ -19,13 +19,20 @@
       <h2 class="text-white text-sm font-semibold mb-2">Tileset</h2>
 
       <label id="uploadTilesetBtn" class="block mb-2">
-        <input id="tilesetInput" type="file" accept="image/*" class="hidden">
+        <input id="tilesetInput" type="file" accept="image/*" class="hidden" multiple>
         <button type="button" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-100 py-2 rounded-md flex items-center justify-center gap-2">
           <!-- heroicon: upload -->
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 8a1 1 0 011-1h3V4a1 1 0 112 0v3h3a1 1 0 011 1v7a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"/></svg>
           Upload Tileset (e.g. 16×16)
         </button>
       </label>
+
+      <div class="mt-2 flex items-center gap-2">
+        <select id="tilesetSelect" class="flex-1 bg-slate-800 rounded px-2 py-1 text-sm">
+          <option value="-1">No tileset</option>
+        </select>
+        <button id="removeTileset" class="bg-red-600 hover:bg-red-500 px-2 py-1 rounded text-sm">Remove</button>
+      </div>
 
       <div class="bg-slate-900 rounded-md p-2 border border-slate-700">
         <canvas id="tilesetCanvas" class="w-full block border border-slate-700 rounded-sm"></canvas>
@@ -133,21 +140,41 @@ const tilesetInput = document.getElementById('tilesetInput');
 const uploadTilesetBtn = document.getElementById('uploadTilesetBtn');
 const tilesetCanvas = document.getElementById('tilesetCanvas');
 const tilesetCtx = tilesetCanvas.getContext('2d');
+const tilesetSelect = document.getElementById('tilesetSelect');
+const removeTilesetBtn = document.getElementById('removeTileset');
 
 const tileSizeInput = document.getElementById('tileSizeInput');
 let tileSize = parseInt(tileSizeInput.value, 10);
 
-const tilesAcrossHeight = { across:0, rows:0 };
-let tilesetImage = null;
+// multiple tilesets support
+let tilesets = []; // { name, image, objectURL }
+let activeTilesetIndex = -1;
+let selectedTilesetIndex = -1;
 let selectedTile = -1;
-let currentTilesetObjectURL = null;
+let tilesAcrossHeight = { across:0, rows:0 };
+let currentTilesetObjectURLs = []; // track to revoke
 
 uploadTilesetBtn.addEventListener('click', ()=> tilesetInput.click());
 tilesetInput.addEventListener('change', handleTilesetUpload);
+tilesetSelect.addEventListener('change', ()=> {
+  const idx = parseInt(tilesetSelect.value,10);
+  setActiveTileset(idx);
+});
+removeTilesetBtn.addEventListener('click', ()=> {
+  if(activeTilesetIndex < 0) return;
+  if(!confirm('Remove selected tileset?')) return;
+  // revoke url if present
+  const t = tilesets[activeTilesetIndex];
+  if(t && t.objectURL) { try{ URL.revokeObjectURL(t.objectURL); }catch(_){} }
+  tilesets.splice(activeTilesetIndex,1);
+  if(tilesets.length === 0) activeTilesetIndex = -1;
+  else activeTilesetIndex = Math.max(0, activeTilesetIndex-1);
+  refreshTilesetSelect();
+  redrawTileset();
+});
 tileSizeInput.addEventListener('change', e=>{
   tileSize = Math.max(4, parseInt(e.target.value)||16);
   redrawTileset();
-  // cell coords depend on tile size -> re-create map tile world x/y
   rebuildTileWorldCoords();
 });
 
@@ -295,44 +322,105 @@ mapCanvas.addEventListener('mouseleave', ()=> { drawPreviewClear(); });
 
 /* ---------- Tileset interaction ---------- */
 tilesetCanvas.addEventListener('click', e=>{
-  if(!tilesetImage) return;
-  const tx = Math.floor(e.offsetX / tileSize);
-  const ty = Math.floor(e.offsetY / tileSize);
-  const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
+  const t = tilesets[activeTilesetIndex];
+  if(!t || !t.image) return;
+  // Map mouse event (client coords) to canvas internal pixels in case CSS scales the canvas
+  const rect = tilesetCanvas.getBoundingClientRect();
+  const scaleX = tilesetCanvas.width / rect.width;
+  const scaleY = tilesetCanvas.height / rect.height;
+  const clickX = (e.clientX - rect.left) * scaleX;
+  const clickY = (e.clientY - rect.top) * scaleY;
+  const tx = Math.floor(clickX / tileSize);
+  const ty = Math.floor(clickY / tileSize);
+  const across = Math.max(1, Math.floor(t.image.width / tileSize));
   selectedTile = ty * across + tx;
+  selectedTilesetIndex = activeTilesetIndex;
   drawTileset();
   updateStatus();
 });
 
-/* redraw tileset with highlight */
+/* handle file upload - revoke previous object URLs to prevent leaks */
+function handleTilesetUpload(e){
+  const files = Array.from(e.target.files || []);
+  if(files.length === 0) return;
+  files.forEach(file => addTileset(file));
+  // clear input to allow re-upload of same file later
+  tilesetInput.value = '';
+}
+
+function addTileset(file){
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  currentTilesetObjectURLs.push(url);
+  img.onload = () => {
+    try { URL.revokeObjectURL(url); } catch(_) {}
+    // push tileset record
+    tilesets.push({ name: file.name || `tileset ${tilesets.length}`, image: img, objectURL: null });
+    activeTilesetIndex = tilesets.length - 1;
+    selectedTilesetIndex = activeTilesetIndex;
+    selectedTile = -1;
+    refreshTilesetSelect();
+    redrawTileset();
+    draw();
+  };
+  img.onerror = () => {
+    alert('Failed to load image: ' + (file.name || 'unknown'));
+    try { URL.revokeObjectURL(url); } catch(_) {}
+  };
+  img.src = url;
+}
+
+function refreshTilesetSelect(){
+  tilesetSelect.innerHTML = '<option value="-1">No tileset</option>';
+  tilesets.forEach((t,i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = `${i}: ${t.name}`;
+    tilesetSelect.appendChild(opt);
+  });
+  tilesetSelect.value = activeTilesetIndex >= 0 ? String(activeTilesetIndex) : '-1';
+}
+
+function setActiveTileset(idx){
+  activeTilesetIndex = (isNaN(idx) ? -1 : idx);
+  if(activeTilesetIndex < 0 || !tilesets[activeTilesetIndex]) {
+    tilesetCanvas.width = 0; tilesetCanvas.height = 0;
+    drawTileset();
+    return;
+  }
+  selectedTilesetIndex = activeTilesetIndex;
+  redrawTileset();
+}
+
 function redrawTileset(){
-  if(!tilesetImage) {
+  const t = tilesets[activeTilesetIndex];
+  if(!t || !t.image) {
     tilesetCtx.clearRect(0,0,tilesetCanvas.width,tilesetCanvas.height);
     tilesetInfo.textContent = 'No tileset loaded';
     return;
   }
-  tilesetCanvas.width = tilesetImage.width;
-  tilesetCanvas.height = tilesetImage.height;
+  tilesetCanvas.width = t.image.width;
+  tilesetCanvas.height = t.image.height;
   tilesetCtx.clearRect(0,0,tilesetCanvas.width,tilesetCanvas.height);
-  tilesetCtx.drawImage(tilesetImage, 0,0);
+  tilesetCtx.drawImage(t.image,0,0);
   drawTileset();
 }
 
-/* draw tileset highlight */
 function drawTileset(){
-  if(!tilesetImage) {
+  const t = tilesets[activeTilesetIndex];
+  if(!t || !t.image) {
     tilesetCtx.clearRect(0,0,tilesetCanvas.width,tilesetCanvas.height);
     tilesetInfo.textContent = 'No tileset loaded';
     return;
   }
   tilesetCtx.clearRect(0,0,tilesetCanvas.width,tilesetCanvas.height);
-  tilesetCtx.drawImage(tilesetImage,0,0);
-  const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
+  tilesetCtx.drawImage(t.image,0,0);
+  const across = Math.max(1, Math.floor(t.image.width / tileSize));
   tilesAcrossHeight.across = across;
-  tilesAcrossHeight.rows = Math.ceil(tilesetImage.height / tileSize);
-  tilesetInfo.textContent = `${tilesetImage.width}×${tilesetImage.height} — ${across} across × ${tilesAcrossHeight.rows} rows`;
+  tilesAcrossHeight.rows = Math.ceil(t.image.height / tileSize);
+  tilesetInfo.textContent = `${t.image.width}×${t.image.height} — ${across} across × ${tilesAcrossHeight.rows} rows`;
 
-  if(selectedTile >= 0) {
+  if(selectedTile >= 0 && selectedTilesetIndex === activeTilesetIndex) {
     const sx = (selectedTile % across) * tileSize;
     const sy = Math.floor(selectedTile / across) * tileSize;
     tilesetCtx.lineWidth = 2;
@@ -341,53 +429,13 @@ function drawTileset(){
   }
 }
 
-/* handle file upload - revoke previous object URLs to prevent leaks */
-function handleTilesetUpload(e){
-  const file = e.target.files[0];
-  if(!file) return;
-
-  // revoke previous object URL if any
-  if(currentTilesetObjectURL) {
-    try { URL.revokeObjectURL(currentTilesetObjectURL); } catch(_) {}
-    currentTilesetObjectURL = null;
-  }
-
-  const img = new Image();
-  const url = URL.createObjectURL(file);
-  currentTilesetObjectURL = url;
-  img.onload = () => {
-    // once the image data is loaded into memory, we can revoke the blob URL
-    try { URL.revokeObjectURL(url); } catch(_) {}
-    currentTilesetObjectURL = null;
-
-    // detach any previous image reference so it can GC
-    if(tilesetImage && tilesetImage.__onload) {
-      tilesetImage.__onload = null;
-    }
-    tilesetImage = img;
-    tilesetImage.__onload = true; // small marker
-
-    tileSize = Math.max(4, parseInt(tileSizeInput.value,10) || 16);
-    tilesetCanvas.width = img.width;
-    tilesetCanvas.height = img.height;
-    drawTileset();
-    draw();
-  };
-  img.onerror = () => {
-    alert('Failed to load image');
-    try { URL.revokeObjectURL(url); } catch(_) {}
-    currentTilesetObjectURL = null;
-  };
-  img.src = url;
-}
-
 /* ---------- Map Data / Layers ---------- */
 function createEmptyLayer(name){
   const arr = [];
   for(let y=0;y<mapHeight;y++){
     const row = [];
     for(let x=0;x<mapWidth;x++){
-      row.push({ tx: -1, ty: -1 });
+      row.push({ tileset: -1, tx: -1, ty: -1 });
     }
     arr.push(row);
   }
@@ -417,21 +465,23 @@ function invalidateAllLayerCaches(){
 }
 
 function redrawLayerCache(layerIdx){
-  if(!layerCaches[layerIdx] || !tilesetImage) return;
+  const cacheRec = layerCaches[layerIdx];
+  if(!cacheRec) return;
   const L = layers[layerIdx];
-  const cache = layerCaches[layerIdx];
+  const cache = cacheRec;
   const ctx = cache.canvas.getContext('2d');
   ctx.clearRect(0, 0, cache.canvas.width, cache.canvas.height);
-  
-  const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
+
   for(let y=0; y<mapHeight; y++){
     for(let x=0; x<mapWidth; x++){
       const cell = L.tiles[y][x];
-      if(cell.tx >= 0) {
-        const sx = cell.tx * tileSize;
-        const sy = cell.ty * tileSize;
-        ctx.drawImage(tilesetImage, sx, sy, tileSize, tileSize, x*tileSize, y*tileSize, tileSize, tileSize);
-      }
+      if(!cell || cell.tx < 0) continue;
+      const tsIdx = (cell.tileset ?? 0);
+      const ts = tilesets[tsIdx];
+      if(!ts || !ts.image) continue;
+      const sx = cell.tx * tileSize;
+      const sy = cell.ty * tileSize;
+      ctx.drawImage(ts.image, sx, sy, tileSize, tileSize, x*tileSize, y*tileSize, tileSize, tileSize);
     }
   }
   cache.isDirty = false;
@@ -450,9 +500,9 @@ function createMap(w,h){
         for(let x=0;x<mapWidth;x++){
           if(L.tiles[y] && L.tiles[y][x]) {
             const c = L.tiles[y][x];
-            row.push({ tx: (c.tx ?? -1), ty: (c.ty ?? -1) });
+            row.push({ tileset: (c.tileset ?? -1), tx: (c.tx ?? -1), ty: (c.ty ?? -1) });
           } else {
-            row.push({ tx: -1, ty: -1 });
+            row.push({ tileset: -1, tx: -1, ty: -1 });
           }
         }
         newTiles.push(row);
@@ -573,9 +623,10 @@ function paintAtEvent(e, erase){
   const ty = Math.floor(worldY / tileSize);
 
   let tileCoord = null;
-  if(!erase && selectedTile >= 0 && tilesetImage) {
-    const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
-    tileCoord = { tx: selectedTile % across, ty: Math.floor(selectedTile / across) };
+  if(!erase && selectedTile >= 0 && tilesets[selectedTilesetIndex] && tilesets[selectedTilesetIndex].image) {
+    const ts = tilesets[selectedTilesetIndex];
+    const across = Math.max(1, Math.floor(ts.image.width / tileSize));
+    tileCoord = { tileset: selectedTilesetIndex, tx: selectedTile % across, ty: Math.floor(selectedTile / across) };
   }
 
   applyBrushAt(tx, ty, erase ? null : tileCoord);
@@ -592,9 +643,9 @@ function applyBrushAt(tileX, tileY, tileCoord){
       const y = tileY + by - half;
       if(x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) continue;
       if(tileCoord) {
-        layers[activeLayer].tiles[y][x] = { tx: tileCoord.tx, ty: tileCoord.ty };
+        layers[activeLayer].tiles[y][x] = { tileset: (tileCoord.tileset ?? 0), tx: tileCoord.tx, ty: tileCoord.ty };
       } else {
-        layers[activeLayer].tiles[y][x] = { tx:-1, ty:-1 };
+        layers[activeLayer].tiles[y][x] = { tileset: -1, tx:-1, ty:-1 };
       }
     }
   }
@@ -648,7 +699,7 @@ function clearActiveLayer(){
   if(!layers[activeLayer]) return;
   for(let y=0;y<mapHeight;y++){
     for(let x=0;x<mapWidth;x++){
-      layers[activeLayer].tiles[y][x] = { tx:-1, ty:-1 };
+      layers[activeLayer].tiles[y][x] = { tileset:-1, tx:-1, ty:-1 };
     }
   }
   invalidateLayerCache(activeLayer);
@@ -657,12 +708,14 @@ function clearActiveLayer(){
 
 function fillActiveLayer(){
   if(!layers[activeLayer]) return;
-  if(selectedTile < 0 || !tilesetImage) return;
-  const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
-  const tileCoord = { tx: selectedTile % across, ty: Math.floor(selectedTile / across) };
+  if(selectedTile < 0 || selectedTilesetIndex < 0) return;
+  const ts = tilesets[selectedTilesetIndex];
+  if(!ts || !ts.image) return;
+  const across = Math.max(1, Math.floor(ts.image.width / tileSize));
+  const tileCoord = { tileset: selectedTilesetIndex, tx: selectedTile % across, ty: Math.floor(selectedTile / across) };
   for(let y=0;y<mapHeight;y++){
     for(let x=0;x<mapWidth;x++){
-      layers[activeLayer].tiles[y][x] = { tx: tileCoord.tx, ty: tileCoord.ty };
+      layers[activeLayer].tiles[y][x] = { tileset: tileCoord.tileset, tx: tileCoord.tx, ty: tileCoord.ty };
     }
   }
   invalidateLayerCache(activeLayer);
@@ -683,7 +736,6 @@ function draw(){
   for(let li=0; li<layers.length; li++){
     const L = layers[li];
     if(!L.visible) continue;
-    if(!tilesetImage) continue;
     
     // Redraw cache if dirty
     if(layerCaches[li] && layerCaches[li].isDirty) {
@@ -795,12 +847,13 @@ function drawPreviewAt(e){
       }
     }
 
-    if(selectedTile >= 0 && tilesetImage){
-      const across = Math.max(1, Math.floor(tilesetImage.width / tileSize));
+    if(selectedTile >= 0 && tilesets[selectedTilesetIndex] && tilesets[selectedTilesetIndex].image){
+      const ts = tilesets[selectedTilesetIndex];
+      const across = Math.max(1, Math.floor(ts.image.width / tileSize));
       const sxTile = (selectedTile % across) * tileSize;
       const syTile = Math.floor(selectedTile / across) * tileSize;
       previewCtx.globalAlpha = 0.9;
-      previewCtx.drawImage(tilesetImage, sxTile, syTile, tileSize, tileSize,
+      previewCtx.drawImage(ts.image, sxTile, syTile, tileSize, tileSize,
                           tx*tileSize, ty*tileSize, tileSize, tileSize);
       previewCtx.globalAlpha = 1.0;
     }
@@ -824,7 +877,7 @@ function buildExportJSON(){
     for (let y = 0; y < mapHeight; y++) {
       for (let x = 0; x < mapWidth; x++) {
         const c = L.tiles[y][x];
-        if (c && c.tx >= 0) placed.push({ x, y, tx: c.tx, ty: c.ty });
+        if (c && c.tx >= 0) placed.push({ x, y, tileset: (c.tileset ?? 0), tx: c.tx, ty: c.ty });
       }
     }
 
@@ -855,7 +908,7 @@ function buildExportJSON(){
             type: 'rect',
             p1: { x: minX, y: minY },
             p2: { x: maxX, y: maxY },
-            tile: { tx: first.tx, ty: first.ty }
+            tile: { tileset: first.tileset ?? 0, tx: first.tx, ty: first.ty }
           }
         };
       }
@@ -874,6 +927,7 @@ function buildExportJSON(){
     height: mapHeight,
     tile_size: tileSize,
     spawn_point: spawnPoint.x >= 0 ? { x: spawnPoint.x, y: spawnPoint.y } : null,
+    tilesets: tilesets.map(t=>({ name: t.name })),
     layers: outLayers
   };
 }
@@ -913,13 +967,23 @@ function loadFromJSONObj(j){
   mapWidth = j.width || mapWidth; mapHeight = j.height || mapHeight;
   spawnPoint = j.spawn_point && j.spawn_point.x >= 0 && j.spawn_point.y >= 0 ? { x: j.spawn_point.x, y: j.spawn_point.y } : { x: -1, y: -1 };
   layers = [];
+  // tilesets cannot be auto-loaded from JSON; keep metadata if present
+  if(Array.isArray(j.tilesets)) {
+    tilesets = j.tilesets.map((t,i)=>({ name: t.name || `tileset ${i}`, image: null, objectURL: null }));
+    activeTilesetIndex = tilesets.length ? 0 : -1;
+    refreshTilesetSelect();
+  } else {
+    tilesets = [];
+    activeTilesetIndex = -1;
+    refreshTilesetSelect();
+  }
   if (Array.isArray(j.layers) && j.layers.length) {
     for (const L of j.layers) {
       // produce a normalized grid filled with empty cells
       const normalized = [];
       for (let y = 0; y < mapHeight; y++) {
         const row = [];
-        for (let x = 0; x < mapWidth; x++) row.push({ tx: -1, ty: -1 });
+        for (let x = 0; x < mapWidth; x++) row.push({ tileset: -1, tx: -1, ty: -1 });
         normalized.push(row);
       }
 
@@ -932,8 +996,8 @@ function loadFromJSONObj(j){
       if (Array.isArray(L.tiles) && L.tiles.length === mapHeight && Array.isArray(L.tiles[0])) {
         for (let y = 0; y < mapHeight; y++) {
           for (let x = 0; x < mapWidth; x++) {
-            const c = (L.tiles[y] && L.tiles[y][x]) ? L.tiles[y][x] : { tx: -1, ty: -1 };
-            normalized[y][x] = { tx: c.tx ?? -1, ty: c.ty ?? -1 };
+            const c = (L.tiles[y] && L.tiles[y][x]) ? L.tiles[y][x] : { tileset: -1, tx: -1, ty: -1 };
+            normalized[y][x] = { tileset: (c.tileset ?? 0), tx: c.tx ?? -1, ty: c.ty ?? -1 };
           }
         }
         layers.push({ name: L.name || 'Layer', visible: !!L.visible, tiles: normalized });
@@ -944,28 +1008,28 @@ function loadFromJSONObj(j){
       if (L.tiles && typeof L.tiles === 'object' && L.tiles.type === 'rect') {
         const p1 = L.tiles.p1 || { x: 0, y: 0 };
         const p2 = L.tiles.p2 || { x: 0, y: 0 };
-        const tile = L.tiles.tile || { tx: -1, ty: -1 };
+        const tile = L.tiles.tile || { tileset: -1, tx: -1, ty: -1 };
         const sx = Math.max(0, Math.min(p1.x, p2.x));
         const sy = Math.max(0, Math.min(p1.y, p2.y));
         const ex = Math.min(mapWidth - 1, Math.max(p1.x, p2.x));
         const ey = Math.min(mapHeight - 1, Math.max(p1.y, p2.y));
         for (let y = sy; y <= ey; y++) {
           for (let x = sx; x <= ex; x++) {
-            normalized[y][x] = { tx: tile.tx ?? -1, ty: tile.ty ?? -1 };
+            normalized[y][x] = { tileset: (tile.tileset ?? 0), tx: tile.tx ?? -1, ty: tile.ty ?? -1 };
           }
         }
         layers.push({ name: L.name || 'Layer', visible: !!L.visible, tiles: normalized });
         continue;
       }
 
-      // Case C: array of placed tiles [{x,y,tx,ty}, ...]
+      // Case C: array of placed tiles [{x,y,tileset,tx,ty}, ...]
       if (Array.isArray(L.tiles)) {
         for (const p of L.tiles) {
           if (!p) continue;
           const x = Math.floor(p.x);
           const y = Math.floor(p.y);
           if (x >= 0 && y >= 0 && x < mapWidth && y < mapHeight) {
-            normalized[y][x] = { tx: (p.tx ?? -1), ty: (p.ty ?? -1) };
+            normalized[y][x] = { tileset: (p.tileset ?? 0), tx: (p.tx ?? -1), ty: (p.ty ?? -1) };
           }
         }
         layers.push({ name: L.name || 'Layer', visible: !!L.visible, tiles: normalized });
@@ -991,7 +1055,8 @@ function loadFromJSONObj(j){
 /* ---------- Utilities ---------- */
 function updateStatus(){
   const spawnText = spawnPoint.x >= 0 ? `${spawnPoint.x},${spawnPoint.y}` : 'none';
-  statusEl.textContent = `Selected tile: ${selectedTile} | Layer: ${layers[activeLayer] ? layers[activeLayer].name : '-'} (${activeLayer}) | Scale: ${Math.round(scale*100)}% | Spawn: ${spawnText}`;
+  const tilesetText = (selectedTilesetIndex >= 0 && tilesets[selectedTilesetIndex]) ? `${selectedTilesetIndex}:${tilesets[selectedTilesetIndex].name}` : 'none';
+  statusEl.textContent = `Selected tile: ${selectedTile} (tileset ${tilesetText}) | Layer: ${layers[activeLayer] ? layers[activeLayer].name : '-'} (${activeLayer}) | Scale: ${Math.round(scale*100)}% | Spawn: ${spawnText}`;
 }
 
 /* ---------- Init defaults ---------- */
