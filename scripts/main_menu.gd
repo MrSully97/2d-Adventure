@@ -35,10 +35,10 @@ func _on_start_pressed() -> void:
 	var map_path = "res://maps/" + map_file  # save for game scene
 	
 	if selected_map == 0:
-		generator_map_options.setMap(null)
+		generator_map_options.setMap('')
 		get_tree().change_scene_to_file("res://scenes/generator_game.tscn")
 	elif selected_map == 1:
-		generator_map_options.setMap(null)
+		generator_map_options.setMap('')
 		get_tree().change_scene_to_file("res://scenes/game.tscn")
 	else:
 		generator_map_options.setMap(map_path)

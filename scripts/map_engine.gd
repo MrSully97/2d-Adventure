@@ -51,7 +51,7 @@ func _ready():
 		spawn_player()
 	else:
 		generate_stage()
-		save_map_to_json("res://maps/temp_maps/generated_map_%s.json" % str(randi_range(1, 10000)))
+		save_map_to_json("res://maps/generated_map_%s.json" % str(randi_range(1, 10000)))
 		spawn_player()
 
 # Respawns player at start if they fall

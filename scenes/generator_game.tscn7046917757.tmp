@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://br0hn3e12r3h3"]
+[gd_scene load_steps=9 format=3 uid="uid://br0hn3e12r3h3"]
 
 [ext_resource type="Script" uid="uid://cmdl6o6tkxvmr" path="res://scripts/world/world_root.gd" id="1_8jxra"]
 [ext_resource type="Script" uid="uid://vtkqdiouu4cf" path="res://scripts/world/world_tile_map.gd" id="2_lneev"]
@@ -8,10 +8,10 @@
 [ext_resource type="TileSet" uid="uid://dutllmhwejlyg" path="res://mid_tileset.tres" id="4_lwx2p"]
 [ext_resource type="PackedScene" uid="uid://cny27g58i2o5r" path="res://scenes/player.tscn" id="5_8jxra"]
 [ext_resource type="Script" uid="uid://138weshckafv" path="res://scripts/world/map_loader.gd" id="5_l72py"]
-[ext_resource type="Script" uid="uid://c1xcs4uapmkxo" path="res://scripts/world/player_spawner.gd" id="6_lwx2p"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_8jxra")
+map_to_load = null
 
 [node name="TileMap" type="TileMap" parent="."]
 tile_set = ExtResource("4_lwx2p")
@@ -29,10 +29,6 @@ script = ExtResource("4_6rssb")
 
 [node name="MapLoader" type="Node" parent="."]
 script = ExtResource("5_l72py")
-
-[node name="PlayerSpawner" type="Node" parent="."]
-script = ExtResource("6_lwx2p")
-player_path = NodePath("../Player")
 
 [node name="Player" parent="." instance=ExtResource("5_8jxra")]
 z_index = 1
