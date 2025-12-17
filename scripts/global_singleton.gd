@@ -1,6 +1,6 @@
 extends Node
 
-var map = null
+var map = ''
 
 func setMap(mapPath) -> void:
 	map = mapPath
