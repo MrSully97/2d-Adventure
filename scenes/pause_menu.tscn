@@ -1,6 +1,6 @@
 [gd_scene load_steps=8 format=3 uid="uid://86hbjsdffw5p"]
 
-[ext_resource type="Script" uid="uid://iapsmx8wk7ii" path="res://scripts/pause_menu.gd" id="1_myx47"]
+[ext_resource type="Script" path="res://scripts/pause_menu.gd" id="1_myx47"]
 [ext_resource type="Shader" uid="uid://ddgicn2gu8w3t" path="res://scripts/shaders/pause_menu.gdshader" id="1_n87rw"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_myx47"]
@@ -110,9 +110,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -100.0
-offset_top = -100.0
+offset_top = -132.0
 offset_right = 100.0
-offset_bottom = 100.0
+offset_bottom = 124.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -132,6 +132,10 @@ script = SubResource("GDScript_myx47")
 layout_mode = 2
 text = "Restart Level"
 
+[node name="Record" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Record Session"
+
 [node name="Main Menu" type="Button" parent="PanelContainer/VBoxContainer"]
 layout_mode = 2
 text = "Quit to Main Menu"
@@ -143,4 +147,5 @@ libraries = {
 
 [connection signal="pressed" from="PanelContainer/VBoxContainer/Resume" to="." method="_on_resume_pressed"]
 [connection signal="pressed" from="PanelContainer/VBoxContainer/Restart" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/Record" to="." method="_on_restart_pressed"]
 [connection signal="pressed" from="PanelContainer/VBoxContainer/Main Menu" to="." method="_on_main_menu_pressed"]

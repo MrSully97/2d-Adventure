@@ -63,6 +63,13 @@ func _on_quit_pressed() -> void:
 func load_available_maps() -> void:
 	available_maps.clear()
 	map_options.clear()
+	
+	# Add generated map and tutorial map options
+	map_options.add_item("Generate Map")
+	map_options.add_item("Tutorial Map")
+	
+	available_maps.append("Generate Map")
+	available_maps.append("Tutorial Map")
 
 	var dir := DirAccess.open("res://maps/")
 	if dir == null:
@@ -71,13 +78,6 @@ func load_available_maps() -> void:
 
 	dir.list_dir_begin()
 	var file_name := dir.get_next()
-	
-	# Add generated map and tutorial map options
-	map_options.add_item("Generate Map")
-	map_options.add_item("Tutorial Map")
-	
-	available_maps.append("Generate Map")
-	available_maps.append("Tutorial Map")
 
 	while file_name != "":
 		if file_name.ends_with(".json"):
