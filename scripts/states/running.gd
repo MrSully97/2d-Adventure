@@ -12,11 +12,14 @@ func enter(previous_state_path: String, data := {}) -> void:
 	player.animation_player.play("run")
 
 func changeAnimationSpeed(input: float) -> void:
-	var player_speed = (abs(player.velocity.x) / 100) / 2
-	if abs(input) > 0:
-		player.animation_player.speed_scale = player_speed if player_speed > 0.25 else 0.25
-	else:
-		player.animation_player.speed_scale = 1.0
+	var speed_ratio = abs(player.velocity.x) / player.SPEED
+	var min_speed := 0.3
+	var max_speed := 1.5
+	player.animation_player.speed_scale = lerp(
+		player.animation_player.speed_scale,
+		clamp(speed_ratio, min_speed, max_speed),
+		0.2  # smooth factor
+	)
 
 func physics_update(_delta: float) -> void:
 	if momentum_boost > 0.0:
@@ -27,17 +30,17 @@ func physics_update(_delta: float) -> void:
 	var input_direction_x := Input.get_axis("move_left", "move_right")
 	
 	# Calculate speed with momentum
-	var effective_speed := player.SPEED + momentum_boost
+	var target_speed := player.SPEED * input_direction_x + momentum_boost
+	var accel := player.ACCELERATION
+	player.velocity.x = lerp(player.velocity.x, target_speed, accel * _delta / max(player.SPEED, 1))
 	
 	if input_direction_x > 0:
 		player.sprite.flip_h = false
 	elif input_direction_x < 0:
 		player.sprite.flip_h = true
 	
-	player.velocity.x = effective_speed * input_direction_x
-	changeAnimationSpeed(player.velocity.x)
-	
 	player.velocity.y += player.gravity * _delta
+	changeAnimationSpeed(player.velocity.x)
 	player.move_and_slide()
 
 	if player.stuck_crouch():

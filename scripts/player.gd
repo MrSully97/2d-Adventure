@@ -1,6 +1,7 @@
 class_name Player extends CharacterBody2D
 
 @export var SPEED := 200.0
+@export var ACCELERATION := 800.0
 @export var JUMP_VELOCITY := -200.0
 @export var gravity := 600.0
 @export var on_ledge: bool = false
